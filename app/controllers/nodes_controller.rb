@@ -46,6 +46,6 @@ class NodesController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def node_params
-      params.require(:node).permit(:name, :content)
+      params.permit(:name, :content, :id)
     end
 end
