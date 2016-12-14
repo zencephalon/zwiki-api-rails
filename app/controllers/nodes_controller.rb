@@ -5,6 +5,8 @@ class NodesController < ApplicationController
   def index
     @nodes = Node.all
 
+    # if we get a search query here instead use that to search
+
     render json: @nodes
   end
 
@@ -47,5 +49,9 @@ class NodesController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def node_params
       params.permit(:name, :content, :id)
+    end
+
+    def search_params
+      params.permit(:q)
     end
 end
