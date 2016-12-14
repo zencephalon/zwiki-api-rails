@@ -76,6 +76,7 @@ GEM
     nio4r (1.2.1)
     nokogiri (1.6.8.1)
       mini_portile2 (~> 2.1.0)
+    pg (0.19.0)
     puma (3.6.2)
     rack (2.0.1)
     rack-attack (5.0.1)
@@ -156,6 +157,7 @@ DEPENDENCIES
   byebug
   factory_girl_rails
   listen (~> 3.0.5)
+  pg
   puma (~> 3.0)
   rack-attack
   rack-cors
