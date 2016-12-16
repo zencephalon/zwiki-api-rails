@@ -3,7 +3,8 @@ class NodesController < ApplicationController
 
   # GET /nodes
   def index
-    render json: q = search_params[:q] ? Node.search_for(q) : Node.all
+    q = search_params[:q]
+    render json: q ? Node.search_for(q) : Node.all
   end
 
   # GET /nodes/1
@@ -44,7 +45,7 @@ class NodesController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def node_params
-      params.permit(:name, :content, :id)
+      params.permit(:name, :content, :id, :title)
     end
 
     def search_params
