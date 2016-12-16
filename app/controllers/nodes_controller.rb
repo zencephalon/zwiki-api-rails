@@ -3,11 +3,7 @@ class NodesController < ApplicationController
 
   # GET /nodes
   def index
-    @nodes = Node.all
-
-    # if we get a search query here instead use that to search
-
-    render json: @nodes
+    render json: q = search_params[:q] ? Node.search_for(q) : Node.all
   end
 
   # GET /nodes/1
