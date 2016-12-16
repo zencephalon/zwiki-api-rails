@@ -3,7 +3,8 @@ class NodesController < ApplicationController
 
   # GET /nodes
   def index
-    render json: q = search_params[:q] ? Node.search_for(q) : Node.all
+    q = search_params[:q]
+    render json: q ? Node.search_for(q) : Node.all
   end
 
   # GET /nodes/1
