@@ -27,7 +27,7 @@ Node.all.each do |node|
     p match
     p $1
     title = Node.find_by(id: $2).name.parameterize
-    "[#{$1}](#{$2}/#{title})"
+    "[#{$1}](/#{$2}/#{title})"
   end
   File.open(filename, 'w') do |f|
     f.puts template(node.name, GitHub::Markup.render('foo.markdown', content))
