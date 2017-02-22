@@ -12,15 +12,34 @@ a {
   color: #36AECC;
 }
 
+a:visited {
+  color: #ccc;
+}
+
 article {
   width: 37em;
   margin-left: 0.5em;
 }
 
-article:not(.faded) {
-  color: #000;
+
+article.faded a {
+  color: #c6e8f1;
+}
+article.faded a:visited {
+  color: #ddd;
+}
+
+article:not(.faded) a {
+  color: #36AECC;
+}
+article:not(.faded) a:visited {
+  color: #aaa;
 }
 
 article.faded {
   color: #ddd;
+}
+
+article:not(.faded) {
+  color: #000;
 }
