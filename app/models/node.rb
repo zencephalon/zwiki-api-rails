@@ -1,7 +1,12 @@
 class Node < ApplicationRecord
   include PgSearch
 
-  pg_search_scope :search_for, against: :content, using: {
+  before_save :extract_name
+
+  pg_search_scope :search_for, against: {
+    name: 'A',
+    content: 'B'
+  }, using: {
     tsearch: {
       any_word: true,
       highlight: {
@@ -11,4 +16,8 @@ class Node < ApplicationRecord
       prefix: true
     }
   }
+
+  def extract_name
+    self.name = self.content.split('\n')[0].match(/#+\s*(.*)$/)[1]
+  end
 end
