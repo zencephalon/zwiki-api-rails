@@ -9,10 +9,12 @@ def template(name, content)
   <html>
     <head>
       <title>#{name}</title>
+      <link rel="stylesheet" href="/style.css" type="text/css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+      <script src="/zwik.js"></script>
     </head>
     <body>
       <div id="root"></div>
-      <script src="/static/bundle.js"></script>
       <article>
 #{content}
       </article>
@@ -23,13 +25,18 @@ end
 
 Node.all.each do |node|
   filename = "#{node.id}.html"
+  txt_filename = "#{node.id}.txt"
   content = node.content.gsub(LINK_REGEX) do |match|
     p match
     p $1
     title = Node.find_by(id: $2).name.parameterize
     "[#{$1}](/#{$2}/#{title})"
   end
+  html = GitHub::Markup.render('foo.markdown', content)
   File.open(filename, 'w') do |f|
-    f.puts template(node.name, GitHub::Markup.render('foo.markdown', content))
+    f.puts template(node.name, html)
+  end
+  File.open(txt_filename, 'w') do |f|
+    f.puts html
   end
 end

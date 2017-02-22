@@ -1,0 +1,26 @@
+body {
+  background-color: #fff;
+  color: #35342f;
+  display: flex;
+  justify-content: center;
+  font-family: 'Vollkorn', serif;
+  font-size: 2vw;
+  margin: 0.5em 1.5em;
+}
+
+a {
+  color: #36AECC;
+}
+
+article {
+  width: 37em;
+  margin-left: 0.5em;
+}
+
+article:not(.faded) {
+  color: #000;
+}
+
+article.faded {
+  color: #ddd;
+}
