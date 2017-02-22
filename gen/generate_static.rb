@@ -1,6 +1,9 @@
 require File.expand_path('../../config/environment', __FILE__)
 require 'github/markup'
 
+style_file = File.expand_path('../style.css', __FILE__)
+js_file = File.expand_path('../zwik.js', __FILE__)
+
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 
 def template(name, content)
@@ -22,6 +25,9 @@ def template(name, content)
   </html>
 HTML
 end
+
+`cp #{style_file} .`
+`cp #{js_file} .`
 
 Node.all.each do |node|
   filename = "#{node.id}.html"
