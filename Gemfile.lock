@@ -57,6 +57,7 @@ GEM
       factory_girl (~> 4.8.0)
       railties (>= 3.0.0)
     ffi (1.9.17)
+    github-markup (1.4.1)
     globalid (0.3.7)
       activesupport (>= 4.1.0)
     i18n (0.8.0)
@@ -120,6 +121,7 @@ GEM
     rb-fsevent (0.9.8)
     rb-inotify (0.9.8)
       ffi (>= 0.5.0)
+    redcarpet (3.4.0)
     rspec-core (3.5.4)
       rspec-support (~> 3.5.0)
     rspec-expectations (3.5.0)
@@ -164,6 +166,7 @@ DEPENDENCIES
   active_model_serializers
   byebug
   factory_girl_rails
+  github-markup
   listen (~> 3.0.5)
   pg
   pg_search
@@ -171,6 +174,7 @@ DEPENDENCIES
   rack-attack
   rack-cors
   rails (= 5.0.1)
+  redcarpet
   rspec-rails (>= 3.5.0)
   spring
   spring-watcher-listen (~> 2.0.0)
