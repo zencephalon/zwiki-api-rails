@@ -13,8 +13,6 @@ def template(name, content)
     <head>
       <title>#{name}</title>
       <link rel="stylesheet" href="/style.css" type="text/css">
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-      <script src="/zwik.js"></script>
     </head>
     <body>
       <div id="root"></div>
@@ -22,6 +20,8 @@ def template(name, content)
 #{content}
       </article>
     </body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="/zwik.js"></script>
   </html>
 HTML
 end
