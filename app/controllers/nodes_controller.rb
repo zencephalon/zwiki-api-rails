@@ -25,8 +25,9 @@ class NodesController < ApplicationController
 
   # PATCH/PUT /nodes/1
   def update
-    if @node.updated_at > node_params[:updated_at]
+    if @node.version != node_params[:version].to_i
       render json: @node.errors, status: :unprocessable_entity
+      return
     end
     if @node.update(node_params)
       render json: @node
@@ -48,7 +49,7 @@ class NodesController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def node_params
-      params.permit(:name, :content, :id, :title, :updated_at)
+      params.permit(:name, :content, :id, :title, :version)
     end
 
     def search_params

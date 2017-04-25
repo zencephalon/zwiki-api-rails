@@ -1,3 +1,3 @@
 class NodeSerializer < ActiveModel::Serializer
-  attributes :id, :name, :content, :updated_at
+  attributes :id, :name, :content, :version
 end
