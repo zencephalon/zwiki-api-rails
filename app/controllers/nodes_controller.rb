@@ -25,7 +25,7 @@ class NodesController < ApplicationController
 
   # PATCH/PUT /nodes/1
   def update
-    if @node.version != node_params[:version].to_i
+    if @node.version >= node_params[:version].to_i
       render json: @node.errors, status: :unprocessable_entity
       return
     end

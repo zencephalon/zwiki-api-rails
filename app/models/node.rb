@@ -2,7 +2,6 @@ class Node < ApplicationRecord
   include PgSearch
 
   before_save :extract_name
-  before_save :update_version
 
   pg_search_scope :search_for, against: {
     name: 'A',
@@ -17,10 +16,6 @@ class Node < ApplicationRecord
       prefix: true
     }
   }
-
-  def update_version
-    self.version += 1
-  end
 
   def extract_name
     self.name = self.content.split('\n')[0].match(/#+\s*(.*)$/)[1]
