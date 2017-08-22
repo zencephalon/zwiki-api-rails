@@ -30,6 +30,7 @@ class Node < ApplicationRecord
       begin
         node = Node.find(match[1])
         self.content = self.content.gsub("](#{match[1]})", "](#{node.short_id})")
+      rescue
       end
     end
   end
