@@ -4,7 +4,7 @@ class Node < ApplicationRecord
   include PgSearch
 
   before_save :extract_name
-  before_save :set_short_id
+  after_create :set_short_id
 
   pg_search_scope :search_for, against: {
     name: 'A',
@@ -22,6 +22,14 @@ class Node < ApplicationRecord
 
   def set_short_id
     self.short_id = ShortId.int_to_short_id(self.id)
+    self.save
+  end
+
+  def convert_links_to_short_id
+    self.content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+      node = Node.find(match[1])
+      self.content = self.content.gsub("](#{match[1]})", "](#{node.short_id})")
+    end
   end
 
   def extract_name
