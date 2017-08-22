@@ -139,7 +139,7 @@ GEM
       rspec-mocks (~> 3.5.0)
       rspec-support (~> 3.5.0)
     rspec-support (3.5.0)
-    short_id (0.0.1)
+    short_id (0.0.2)
     spring (2.0.1)
       activesupport (>= 4.2)
     spring-watcher-listen (2.0.1)
@@ -177,7 +177,7 @@ DEPENDENCIES
   rails (= 5.0.1)
   redcarpet
   rspec-rails (>= 3.5.0)
-  short_id
+  short_id (= 0.0.2)
   spring
   spring-watcher-listen (~> 2.0.0)
   tzinfo-data
