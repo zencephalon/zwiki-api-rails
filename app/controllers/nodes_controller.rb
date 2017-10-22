@@ -1,4 +1,5 @@
 class NodesController < ApplicationController
+  include Secured
   before_action :set_node, only: [:show, :update, :destroy]
 
   # GET /nodes

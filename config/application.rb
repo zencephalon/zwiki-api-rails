@@ -29,6 +29,8 @@ module ZwikiApi
       end
     end
 
+    config.autoload_paths += %W(#{config.root}/lib)
+
     config.middleware.use Rack::Attack
 
     # Only loads a smaller set of middleware suitable for API only apps.
