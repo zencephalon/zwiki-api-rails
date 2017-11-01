@@ -20,7 +20,6 @@ ActiveRecord::Schema.define(version: 20170822044247) do
     t.string   "content"
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
-    t.string   "title"
     t.integer  "version",    default: 0
     t.string   "short_id"
   end
