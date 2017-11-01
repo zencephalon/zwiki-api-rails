@@ -29,6 +29,9 @@ gem 'github-markup'
 
 gem 'short_id', '0.0.2'
 
+gem 'words_counted'
+gem 'rest-client'
+
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platform: :mri

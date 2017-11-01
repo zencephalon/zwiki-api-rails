@@ -1,4 +1,5 @@
 require 'short_id'
+require 'digest'
 
 class Node < ApplicationRecord
   include PgSearch
@@ -19,6 +20,25 @@ class Node < ApplicationRecord
       prefix: true
     }
   }
+
+  def self.update_word_count
+    count = 0
+    Node.all.each do |node|
+      count += node.word_count
+    end
+
+    hashable = 'ZqcB1SUI4FsjXTlkTWZG' + 'Zencephalon' + count
+    sha = Digest::SHA1.hexdigest hashable
+    RestClient.put "http://nanowrimo.org/api/wordcount", {
+      hash: sha,
+      name: 'Zencephalon',
+      wordcount: count
+    }
+  end
+
+  def word_count
+    WordsCounted.count(self.content)
+  end
 
   def set_short_id
     self.short_id = ShortId.int_to_short_id(self.id)
