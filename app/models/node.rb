@@ -29,7 +29,7 @@ class Node < ApplicationRecord
 
     hashable = 'ZqcB1SUI4FsjXTlkTWZG' + 'Zencephalon' + count.to_s
     sha = Digest::SHA1.hexdigest hashable
-    RestClient.put "http://nanowrimo.org/api/wordcount", {
+    RestClient.put "https://nanowrimo.org/api/wordcount", {
       hash: sha,
       name: 'Zencephalon',
       wordcount: count
