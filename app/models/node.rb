@@ -27,7 +27,7 @@ class Node < ApplicationRecord
       count += node.word_count
     end
 
-    hashable = 'ZqcB1SUI4FsjXTlkTWZG' + 'Zencephalon' + count
+    hashable = 'ZqcB1SUI4FsjXTlkTWZG' + 'Zencephalon' + count.to_s
     sha = Digest::SHA1.hexdigest hashable
     RestClient.put "http://nanowrimo.org/api/wordcount", {
       hash: sha,
@@ -37,7 +37,7 @@ class Node < ApplicationRecord
   end
 
   def word_count
-    WordsCounted.count(self.content)
+    WordsCounted.count(self.content).token_count
   end
 
   def set_short_id
