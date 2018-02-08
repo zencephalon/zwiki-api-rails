@@ -7,6 +7,8 @@ class Node < ApplicationRecord
   before_save :extract_name
   after_create :set_short_id
 
+  belongs_to :user
+
   pg_search_scope :search_for, against: {
     name: 'A',
     content: 'B'

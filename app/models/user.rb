@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   has_secure_password
 
+  has_many :nodes
+
   # Assign an API key on create
   before_create do |user|
     user.api_key = user.generate_api_key
