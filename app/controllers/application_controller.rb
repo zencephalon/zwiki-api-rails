@@ -3,7 +3,7 @@ class ApplicationController < ActionController::API
 
   include ActionController::HttpAuthentication::Token::ControllerMethods
 
-  # before_action :authenticate
+  before_action :authenticate
 
   protected
 
@@ -13,9 +13,10 @@ class ApplicationController < ActionController::API
   end
 
   def authenticate_token
-    authenticate_with_http_token do |token, options|
-      @current_user = User.find_by(api_key: token)
-    end
+    token = request.headers['Authorization']
+    return false unless token
+    @current_user = User.find_by(api_key: token)
+    return @current_user
   end
 
   def render_unauthorized(realm = "Application")
