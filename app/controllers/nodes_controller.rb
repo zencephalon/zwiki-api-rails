@@ -4,12 +4,16 @@ class NodesController < ApplicationController
   # GET /nodes
   def index
     q = search_params[:q]
-    render json: q ? Node.search_for(q) : Node.all
+    render json: q ? @current_user.nodes.search_for(q) : @current_user.nodes.all
   end
 
   # GET /nodes/1
   def show
-    render json: @node
+    if @current_user.id == @node.user_id
+      render json: @node
+    else
+      render json: @node.errors, status: :unprocessable_entity
+    end
   end
 
   # POST /nodes
