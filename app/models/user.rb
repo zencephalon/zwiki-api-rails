@@ -8,6 +8,8 @@ class User < ApplicationRecord
     user.api_key = user.generate_api_key
   end
 
+   #ToDO create an after_create to give a root_id of the node id you create for this user
+
   # Generate a unique API key
   def generate_api_key
     loop do
