@@ -4,7 +4,7 @@ class NodesController < ApplicationController
   # GET /nodes
   def index
     q = search_params[:q]
-    render json: q ? @current_user.nodes.search_for(q) : @current_user.nodes.all, each_serializer: NodeShortSerializer
+    render json: q.empty? ? @current_user.nodes.all : @current_user.nodes.search_for(q), each_serializer: NodeShortSerializer
   end
 
   # GET /nodes/1
