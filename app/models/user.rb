@@ -13,9 +13,31 @@ class User < ApplicationRecord
       name: 'Root',
       content: %{# Root
 
-Welcome to Zwiki
+ILUVU, Welcome to Zwiki.
 
 Start creating links to get started.
+
+## Keyboard Shortcuts
+
+Ctrl-space switches between the editor and the search bar
+
+If U start typing a link with [ it will start suggesting ways to complete it. Using Tab will complete the link.
+
+If U want to create a new page U can start typing a link like "[New Page" and then hit ctrl-N for "new" and it'll open your new page and complete the link to it
+
+ctrl-f (focus) will close all pages except the one U have focus on
+
+If U hit tab or shift-tab it'll cycle through the links on the current page
+
+ctrl-Q and ctrl-shift-Q will select paragraphs within a page
+
+ctrl-z will turn a line into a todo item and then toggle the todo between done and not done
+
+To move between panes use ctrl-[hjkl]. h moves left, l moves right, j moves down, and k moves up.
+
+ctrl-shift-d will insert today's date
+
+ctrl-d will enter a timestamp for right now
 })
     user.root_id = node.short_id
     user.save
