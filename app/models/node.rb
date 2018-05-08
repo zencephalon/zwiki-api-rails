@@ -16,7 +16,7 @@ class Node < ApplicationRecord
     tsearch: {
       any_word: true,
       highlight: {
-        start_sel: '<b>',
+      start_sel: '<b>',
         stop_sel: '</b>'
       },
       prefix: true
@@ -63,5 +63,9 @@ class Node < ApplicationRecord
     rescue
       self.name = 'Untitled'
     end
+  end
+
+  def url
+    "/#{self.short_id}/#{self.name.parameterize}"
   end
 end

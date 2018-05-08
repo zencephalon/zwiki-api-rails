@@ -1,3 +1,6 @@
+require 'redcarpet'
+require 'byebug'
+
 class User < ApplicationRecord
   has_secure_password
 
@@ -50,6 +53,28 @@ ctrl-d will enter a timestamp for right now
     loop do
       token = SecureRandom.base64.tr('+/=', 'Qrt')
       break token unless User.exists?(api_key: token)
+    end
+  end
+
+  def export_nodes
+    renderer = Redcarpet::Render::HTML.new(hard_wrap: true, with_toc_data: true)
+    markdown = Redcarpet::Markdown.new(renderer, extensions = {})
+
+    urls = {}
+    self.nodes.each do |node|
+      urls[node.short_id] = node.url
+    end
+    self.nodes.each do |node|
+      filename = self.root_id == node.short_id ? 'index' : node.short_id
+      File.open("export/#{filename}.html", 'w') do |f|
+        content = node.content
+        content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+          if urls[match[1]]
+            content = content.gsub("](#{match[1]})", "](#{urls[match[1]]}.html)")
+          end
+        end
+        f.puts markdown.render(content)
+      end
     end
   end
 end
