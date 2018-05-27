@@ -66,7 +66,7 @@ ctrl-d will enter a timestamp for right now
     end
     self.nodes.each do |node|
       filename = self.root_id == node.short_id ? 'index' : node.short_id
-      File.open("export/#{filename}.html", 'w') do |f|
+      File.open("export/#{filename}.html", 'w:UTF-8') do |f|
         content = node.content
         content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
           if urls[match[1]]
