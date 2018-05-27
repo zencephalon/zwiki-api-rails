@@ -56,6 +56,26 @@ ctrl-d will enter a timestamp for right now
     end
   end
 
+  def template(name, content)
+  <<HTML
+    <!doctype html>
+    <html>
+      <head>
+        <title>#{name}</title>
+        <link rel="stylesheet" href="/style.css" type="text/css">
+      </head>
+      <body>
+        <div id="root"></div>
+        <article>
+  #{content}
+        </article>
+      </body>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+      <script src="/zwik.js"></script>
+    </html>
+  HTML
+  end
+
   def export_nodes
     renderer = Redcarpet::Render::HTML.new(hard_wrap: true, with_toc_data: true)
     markdown = Redcarpet::Markdown.new(renderer, extensions = {})
@@ -66,14 +86,18 @@ ctrl-d will enter a timestamp for right now
     end
     self.nodes.each do |node|
       filename = self.root_id == node.short_id ? 'index' : node.short_id
-      File.open("export/#{filename}.html", 'w') do |f|
-        content = node.content
-        content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
-          if urls[match[1]]
-            content = content.gsub("](#{match[1]})", "](#{urls[match[1]]}.html)")
-          end
+      content = node.content
+      content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+        if urls[match[1]]
+          content = content.gsub("](#{match[1]})", "](#{urls[match[1]]})")
         end
-        f.puts markdown.render(content)
+      end
+      rendered = markdown.render(content)
+      File.open("export/#{filename}.html", 'w') do |f|
+        f.puts template(node.name, rendered)
+      end
+      File.open("export/#{filename}.txt", 'w') do |f|
+        f.puts rendered
       end
     end
   end
