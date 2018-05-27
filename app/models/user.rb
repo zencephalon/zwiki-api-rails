@@ -57,7 +57,7 @@ ctrl-d will enter a timestamp for right now
   end
 
   def template(name, content)
-  <<HTML
+<<HTML
     <!doctype html>
     <html>
       <head>
@@ -73,7 +73,7 @@ ctrl-d will enter a timestamp for right now
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="/zwik.js"></script>
     </html>
-  HTML
+HTML
   end
 
   def export_nodes
