@@ -65,7 +65,7 @@ ctrl-d will enter a timestamp for right now
         <link rel="stylesheet" href="/style.css" type="text/css">
       </head>
       <body>
-        <div id="root"></div>
+        <div id="logo"><img src="/zenchinese.png" /></div>
         <article>
   #{content}
         </article>
