@@ -16,6 +16,10 @@ a:visited {
   color: #ccc;
 }
 
+img.logo {
+  width: 3em;
+}
+
 article {
   width: 37em;
   margin-left: 0.5em;

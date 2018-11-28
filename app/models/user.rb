@@ -62,10 +62,11 @@ ctrl-d will enter a timestamp for right now
     <html>
       <head>
         <title>#{name}</title>
+        <link href="https://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet">
         <link rel="stylesheet" href="/style.css" type="text/css">
       </head>
       <body>
-        <div id="logo"><a href="/"><img src="/zenchinese.png" /></a></div>
+        <div id="logo"><a href="/"><img class="logo" src="/zenchinese.png" /></a></div>
         <article>
   #{content}
         </article>
