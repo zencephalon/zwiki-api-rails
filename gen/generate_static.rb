@@ -3,46 +3,12 @@ require 'github/markup'
 
 style_file = File.expand_path('../style.css', __FILE__)
 js_file = File.expand_path('../zwik.js', __FILE__)
+favicon = File.expand_path('../favicon.ico', __FILE__)
+logo = File.expand_path('../zenchinese.png', __FILE__)
 
-LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
+`cp #{style_file} export/`
+`cp #{js_file} export/`
+`cp #{favicon} export/`
+`cp #{logo} export/`
 
-def template(name, content)
-<<HTML
-  <!doctype html>
-  <html>
-    <head>
-      <title>#{name}</title>
-      <link rel="stylesheet" href="/style.css" type="text/css">
-    </head>
-    <body>
-      <div id="root"></div>
-      <article>
-#{content}
-      </article>
-    </body>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="/zwik.js"></script>
-  </html>
-HTML
-end
-
-`cp #{style_file} .`
-`cp #{js_file} .`
-
-Node.all.each do |node|
-  filename = "#{node.id}.html"
-  txt_filename = "#{node.id}.txt"
-  content = node.content.gsub(LINK_REGEX) do |match|
-    p match
-    p $1
-    title = Node.find_by(id: $2).name.parameterize
-    "[#{$1}](/#{$2}/#{title})"
-  end
-  html = GitHub::Markup.render('foo.markdown', content)
-  File.open(filename, 'w') do |f|
-    f.puts template(node.name, html)
-  end
-  File.open(txt_filename, 'w') do |f|
-    f.puts html
-  end
-end
+User.find_by(name: 'zen_public').export_nodes
