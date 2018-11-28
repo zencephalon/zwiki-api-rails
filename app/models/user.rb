@@ -80,10 +80,11 @@ HTML
 
     urls = {}
     self.nodes.each do |node|
-      urls[node.short_id] = node.url
+      urls[node.short_id] = node.url(urls)
     end
+    urls[self.root_id] = 'index'
     self.nodes.each do |node|
-      filename = self.root_id == node.short_id ? 'index' : node.short_id
+      filename = urls[node.short_id]
       content = node.content
       content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
         if urls[match[1]]

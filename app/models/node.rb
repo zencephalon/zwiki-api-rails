@@ -65,7 +65,15 @@ class Node < ApplicationRecord
     end
   end
 
-  def url
-    "/#{self.short_id}/#{self.name.parameterize}"
+  def url(urls)
+    counter = 0
+    url = "/#{self.name.parameterize}"
+    return url unless urls[url]
+
+    while true
+      counted_url = "#{url}-#{counter}"
+      return counted_url unless urls[counted_url]
+      counter += 1
+    end
   end
 end
