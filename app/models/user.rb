@@ -62,7 +62,7 @@ ctrl-d will enter a timestamp for right now
     <html>
       <head>
         <title>#{name}</title>
-        <link href="https://fonts.googleapis.com/css?family=Unica+One|Vollkorn" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet">
         <link rel="stylesheet" href="/style.css" type="text/css">
       </head>
       <body>
