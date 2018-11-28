@@ -30,6 +30,9 @@ article {
   margin-left: 0.5em;
 }
 
+article h1 {
+  font-family: 'Unica One', cursive;
+}
 
 article.faded a {
   color: #c6e8f1;
