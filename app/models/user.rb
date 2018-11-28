@@ -70,8 +70,6 @@ ctrl-d will enter a timestamp for right now
   #{content}
         </article>
       </body>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-      <script src="/zwik.js"></script>
     </html>
 HTML
   end
