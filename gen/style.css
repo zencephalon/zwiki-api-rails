@@ -33,6 +33,8 @@ article {
 article h1 {
   font-family: 'Unica One', cursive;
   text-transform: uppercase;
+  font-weight: normal;
+  color: #36AECC;
 }
 
 article.faded a {
