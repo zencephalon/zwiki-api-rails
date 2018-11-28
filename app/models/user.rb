@@ -88,7 +88,7 @@ HTML
       content = node.content
       content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
         if urls[match[1]]
-          content = content.gsub("](#{match[1]})", "](#{urls[match[1]]})")
+          content = content.gsub("](#{match[1]})", "](#{urls[match[1]]}.html)")
         end
       end
       rendered = markdown.render(content)
