@@ -67,6 +67,7 @@ GEM
     http-cookie (1.0.3)
       domain_name (~> 0.5)
     i18n (0.8.0)
+    json (2.1.0)
     jsonapi (0.1.1.beta6)
       jsonapi-parser (= 0.1.1.beta3)
       jsonapi-renderer (= 0.1.1.beta1)
@@ -186,6 +187,7 @@ DEPENDENCIES
   byebug
   factory_girl_rails
   github-markup
+  json
   listen (~> 3.0.5)
   pg
   pg_search
@@ -204,4 +206,4 @@ DEPENDENCIES
   words_counted
 
 BUNDLED WITH
-   1.14.6
+   1.16.1
