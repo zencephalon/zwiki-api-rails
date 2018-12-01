@@ -87,17 +87,20 @@ HTML
     self.nodes.each do |node|
       filename = urls[node.short_id]
       content = node.content
+      html_content = node.content
       content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
-        if urls[match[1]]
-          content = content.gsub("](#{match[1]})", "](#{urls[match[1]]}.html)")
+        matched_url = match[1].chomp('!')
+        if urls[matched_url]
+          content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
+          html_content = html_content.gsub("](#{match[1]})", "](#{urls[matched_url]}.html)")
         end
       end
-      rendered = markdown.render(content)
+      rendered = markdown.render(html_content)
       File.open("export/#{filename}.html", 'w:UTF-8') do |f|
         f.puts template(node.name, rendered)
       end
-      File.open("export/#{filename}.txt", 'w:UTF-8') do |f|
-        f.puts rendered
+      File.open("export/#{filename}.md", 'w:UTF-8') do |f|
+        f.puts content
       end
     end
   end
