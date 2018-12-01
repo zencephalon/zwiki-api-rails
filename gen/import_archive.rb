@@ -1,5 +1,5 @@
 require File.expand_path('../../config/environment', __FILE__)
-require 'JSON'
+require 'json'
 
 f = File.open('archive.json')
 content = f.read
