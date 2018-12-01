@@ -43,8 +43,10 @@ class Node < ApplicationRecord
   end
 
   def set_short_id
-    self.short_id = ShortId.int_to_short_id(self.id)
-    self.save
+    unless self.short_id
+      self.short_id = ShortId.int_to_short_id(self.id)
+      self.save
+    end
   end
 
   def convert_links_to_short_id
