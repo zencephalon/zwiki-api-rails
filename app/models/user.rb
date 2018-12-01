@@ -96,10 +96,10 @@ HTML
         end
       end
       rendered = markdown.render(html_content)
-      File.open("export/#{filename}.html", 'w:UTF-8') do |f|
+      File.open("content/#{filename}.html", 'w:UTF-8') do |f|
         f.puts template(node.name, rendered)
       end
-      File.open("export/#{filename}.md", 'w:UTF-8') do |f|
+      File.open("content/#{filename}.md", 'w:UTF-8') do |f|
         f.puts content
       end
     end
