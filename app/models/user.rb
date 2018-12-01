@@ -95,6 +95,8 @@ HTML
           html_content = html_content.gsub("](#{match[1]})", "](#{urls[matched_url]}.html)")
         end
       end
+      content.gsub!("☐", "* ☐")
+      content.gsub!("☑", "* ☑")
       rendered = markdown.render(html_content)
       File.open("content/#{filename}.html", 'w:UTF-8') do |f|
         f.puts template(node.name, rendered)
