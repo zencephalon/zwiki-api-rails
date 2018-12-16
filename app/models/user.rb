@@ -57,9 +57,6 @@ ctrl-d will enter a timestamp for right now
   end
 
   def export_nodes
-    renderer = Redcarpet::Render::HTML.new(hard_wrap: true, with_toc_data: true)
-    markdown = Redcarpet::Markdown.new(renderer, extensions = {})
-
     urls = {}
     self.nodes.each do |node|
       urls[node.short_id] = node.url(urls)
@@ -68,24 +65,9 @@ ctrl-d will enter a timestamp for right now
 
     self.nodes.each do |node|
       filename = urls[node.short_id]
-      content = node.content
-      html_content = node.content
-
-      content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
-        matched_url = match[1].chomp('!')
-
-        if urls[matched_url]
-          content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
-          html_content = html_content.gsub("](#{match[1]})", "](#{urls[matched_url]}.html)")
-        end
-      end
-
-      content.gsub!("☐", "* ☐")
-      content.gsub!("☑", "* ☑")
-      rendered = markdown.render(html_content)
 
       File.open("content/#{filename}.md", 'w:UTF-8') do |f|
-        f.puts content
+        f.puts Node.to_export(node.content, urls)
       end
     end
   end

@@ -67,6 +67,36 @@ class Node < ApplicationRecord
     end
   end
 
+  def content_without_title
+    self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
+  end
+
+  def self.to_export(input, urls)
+    content = input
+
+    input.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+      matched_url = match[1].chomp('!')
+
+      if urls[matched_url]
+        content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
+      end
+    end
+
+    input = content
+
+    input.scan(/\{([^{]+)\}\(([^)]+)\)/).each do |match|
+      node = Node.find_by(short_id: match[1])
+      if node
+        content = content.gsub("{#{match[0]}}(#{match[1]})", Node.to_export(node.content_without_title, urls))
+      end
+    end
+
+    content.gsub!("☐", "* ☐")
+    content.gsub!("☑", "* ☑")
+
+    content
+  end
+
   def url(urls)
     counter = 0
     url = "/#{self.name.parameterize}"
