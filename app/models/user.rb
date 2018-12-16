@@ -56,25 +56,6 @@ ctrl-d will enter a timestamp for right now
     end
   end
 
-  def template(name, content)
-<<HTML
-    <!doctype html>
-    <html>
-      <head>
-        <title>#{name}</title>
-        <link href="https://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet">
-        <link rel="stylesheet" href="/style.css" type="text/css">
-      </head>
-      <body>
-        <div id="logo"><a href="/"><img class="logo" src="/zenchinese.png" /></a></div>
-        <article>
-  #{content}
-        </article>
-      </body>
-    </html>
-HTML
-  end
-
   def export_nodes
     renderer = Redcarpet::Render::HTML.new(hard_wrap: true, with_toc_data: true)
     markdown = Redcarpet::Markdown.new(renderer, extensions = {})
@@ -84,23 +65,25 @@ HTML
       urls[node.short_id] = node.url(urls)
     end
     urls[self.root_id] = 'index'
+
     self.nodes.each do |node|
       filename = urls[node.short_id]
       content = node.content
       html_content = node.content
+
       content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
         matched_url = match[1].chomp('!')
+
         if urls[matched_url]
           content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
           html_content = html_content.gsub("](#{match[1]})", "](#{urls[matched_url]}.html)")
         end
       end
+
       content.gsub!("☐", "* ☐")
       content.gsub!("☑", "* ☑")
       rendered = markdown.render(html_content)
-      File.open("content/#{filename}.html", 'w:UTF-8') do |f|
-        f.puts template(node.name, rendered)
-      end
+
       File.open("content/#{filename}.md", 'w:UTF-8') do |f|
         f.puts content
       end
