@@ -1,0 +1,45 @@
+body {
+  background-color: #fff;
+  color: #35342f;
+  display: flex;
+  justify-content: center;
+  font-family: 'Vollkorn', serif;
+  font-size: 2vw;
+  margin: 0.5em 1.5em;
+}
+
+a {
+  color: #36AECC;
+}
+
+a:visited {
+  color: #ccc;
+}
+
+article {
+  width: 37em;
+  margin-left: 0.5em;
+}
+
+
+article.faded a {
+  color: #c6e8f1;
+}
+article.faded a:visited {
+  color: #ddd;
+}
+
+article:not(.faded) a {
+  color: #36AECC;
+}
+article:not(.faded) a:visited {
+  color: #aaa;
+}
+
+article.faded {
+  color: #ddd;
+}
+
+article:not(.faded) {
+  color: #000;
+}
