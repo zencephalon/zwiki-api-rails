@@ -46,8 +46,6 @@ ctrl-d will enter a timestamp for right now
     user.save
   end
 
-   #ToDO create an after_create to give a root_id of the node id you create for this user
-
   # Generate a unique API key
   def generate_api_key
     loop do
@@ -56,14 +54,32 @@ ctrl-d will enter a timestamp for right now
     end
   end
 
+  # nodes reachable from the root, basically
+  def get_public_nodes
+    seen_nodes = {}
+    queue = [self.root_id]
+
+    until queue.empty? do
+      current = Node.find(queue.pop)
+      continue if seen_nodes[current.id]
+
+      seen_nodes[current.id] = current
+      queue.push(*current.get_links)
+    end
+
+    return seen_nodes.values
+  end
+
   def export_nodes
     urls = {}
-    self.nodes.each do |node|
+    public_nodes = get_public_nodes
+
+    public_nodes.each do |node|
       urls[node.short_id] = node.url(urls)
     end
     urls[self.root_id] = 'index'
 
-    self.nodes.each do |node|
+    public_nodes.each do |node|
       filename = urls[node.short_id]
 
       File.open("content/#{filename}.md", 'w:UTF-8') do |f|

@@ -1,6 +1,8 @@
 require 'short_id'
 require 'digest'
 
+LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
+
 class Node < ApplicationRecord
   include PgSearch
 
@@ -50,13 +52,25 @@ class Node < ApplicationRecord
   end
 
   def convert_links_to_short_id
-    self.content.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+    self.content.scan(LINK_REGEX).each do |match|
       begin
         node = Node.find(match[1])
         self.content = self.content.gsub("](#{match[1]})", "](#{node.short_id})")
       rescue
       end
     end
+  end
+
+  def get_links
+    links = []
+    self.content.scan(LINK_REGEX).each do |match|
+      begin
+        node = Node.find(match[1])
+        links.push(node.id)
+      rescue
+      end
+    end
+    return links
   end
 
   def extract_name
@@ -74,7 +88,7 @@ class Node < ApplicationRecord
   def self.to_export(input, urls)
     content = input
 
-    input.scan(/\[([^\[]+)\]\(([^)]+)\)/).each do |match|
+    input.scan(LINK_REGEX).each do |match|
       matched_url = match[1].chomp('!')
 
       if urls[matched_url]
