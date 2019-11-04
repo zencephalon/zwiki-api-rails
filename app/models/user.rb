@@ -59,6 +59,8 @@ ctrl-d will enter a timestamp for right now
     seen_nodes = {}
     queue = [self.root_id]
 
+    puts "hello?"
+
     until queue.empty? do
       current = Node.find_by(short_id: queue.pop)
       continue if seen_nodes[current.id]

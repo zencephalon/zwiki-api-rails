@@ -70,6 +70,7 @@ class Node < ApplicationRecord
       rescue
       end
     end
+    puts "found links #{links.to_s}"
     return links
   end
 
@@ -93,6 +94,8 @@ class Node < ApplicationRecord
 
       if urls[matched_url]
         content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
+      else
+        content = content.gsub("](#{match[1]})", "](#{matched_url})")
       end
     end
 
