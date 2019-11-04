@@ -63,9 +63,11 @@ ctrl-d will enter a timestamp for right now
 
     until queue.empty? do
       current = Node.find_by(short_id: queue.pop)
-      continue if seen_nodes[current.id]
+      next unless current
+      next if seen_nodes[current.id]
 
       seen_nodes[current.id] = current
+
       queue.push(*current.get_links)
     end
 
