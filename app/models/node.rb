@@ -65,7 +65,8 @@ class Node < ApplicationRecord
     links = []
     self.content.scan(LINK_REGEX).each do |match|
       begin
-        node = Node.find_by(short_id: match[1])
+        matched_url = match[1].chomp('!')
+        node = Node.find_by(short_id: matched_url)
         links.push(node.short_id)
       rescue
       end
