@@ -13,4 +13,11 @@
        headers: :any,
        methods: [:get, :post, :put, :patch, :delete, :options, :head]
    end
+   allow do
+     origins 'localhost:3000'
+
+     resource '*',
+       headers: :any,
+       methods: [:get, :post, :put, :patch, :delete, :options, :head]
+   end
 end
