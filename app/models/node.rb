@@ -63,15 +63,17 @@ class Node < ApplicationRecord
 
   def get_links
     links = []
+    node_names = []
     self.content.scan(LINK_REGEX).each do |match|
       begin
         matched_url = match[1].chomp('!')
         node = Node.find_by(short_id: matched_url)
         links.push(node.short_id)
+        node_names.push(node.name)
       rescue
       end
     end
-    puts "found links #{links.to_s}"
+    puts "found links #{node_names.to_s} in #{self.name}"
     return links
   end
 
