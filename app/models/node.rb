@@ -6,6 +6,8 @@ LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 class Node < ApplicationRecord
   include PgSearch
 
+  validates :name, uniqueness: true
+
   before_save :extract_name
   after_create :set_short_id
 
