@@ -18,6 +18,13 @@ class NodesController < ApplicationController
 
   # POST /nodes
   def create
+    node = Node.find_by(name: node_params[:name])
+
+    if node
+      render json: node, location: node
+      return
+    end
+
     @node = Node.new(node_params)
     @node.user_id = @current_user.id
 
