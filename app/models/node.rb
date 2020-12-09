@@ -99,7 +99,9 @@ class Node < ApplicationRecord
   end
 
   def extract_journal_date
-    self.journal_date = Chronic.parse(self.name)
+    begin
+      self.journal_date = Chronic.parse(self.name)
+    end
   end
 
   def content_without_title

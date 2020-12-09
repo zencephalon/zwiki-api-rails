@@ -37,6 +37,9 @@ class NodesController < ApplicationController
 
   # PATCH/PUT /nodes/1
   def update
+    if @current_user.id != @node.user_id
+      render status: :403
+    end
     if @node.version >= node_params[:version].to_i
       render json: { server_version: @node.version, client_version: node_params[:version] }, status: :unprocessable_entity
       return
@@ -50,6 +53,10 @@ class NodesController < ApplicationController
 
   # DELETE /nodes/1
   def destroy
+    if @current_user.id != @node.user_id
+      render status: :403
+    end
+
     @node.destroy
   end
 
