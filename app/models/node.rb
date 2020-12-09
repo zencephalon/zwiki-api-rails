@@ -7,6 +7,7 @@ class Node < ApplicationRecord
   include PgSearch
 
   validates :name, uniqueness: true
+  validates :short_id, uniqueness: true
 
   before_save :extract_name
   after_create :set_short_id
@@ -26,6 +27,15 @@ class Node < ApplicationRecord
       prefix: true
     }
   }
+
+  def self.dedupe
+    # find all models and group them on keys which should be common
+    grouped = all.group_by{|model| model.short_id }
+    grouped.values.each do |duplicates|
+      first_one = duplicates.max_by{|model| model.content.length}
+      duplicates.filter {|m| m.id != first_one.id}.each(&:destroy)
+    end
+  end
 
   def self.update_word_count
     count = 0
