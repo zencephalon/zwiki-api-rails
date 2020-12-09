@@ -194,6 +194,7 @@ DEPENDENCIES
   active_model_serializers
   bcrypt (~> 3.1.7)
   byebug
+  chronic
   factory_girl_rails
   github-markup
   irb
@@ -216,4 +217,4 @@ DEPENDENCIES
   words_counted
 
 BUNDLED WITH
-   2.0.1
+   2.1.4

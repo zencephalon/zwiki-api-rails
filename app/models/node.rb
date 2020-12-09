@@ -1,5 +1,6 @@
 require 'short_id'
 require 'digest'
+require 'chronic'
 
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 
@@ -9,7 +10,7 @@ class Node < ApplicationRecord
   validates :name, uniqueness: true
   validates :short_id, uniqueness: true
 
-  before_save :extract_name
+  before_save :extract_name, :extract_journal_date
   after_create :set_short_id
 
   belongs_to :user
@@ -93,8 +94,12 @@ class Node < ApplicationRecord
     begin
       self.name = self.content.split('\n')[0].match(/#+\s*(.*)$/)[1]
     rescue
-      self.name = 'Untitled'
+      self.name = Time.now.to_s
     end
+  end
+
+  def extract_journal_date
+    self.journal_date = Chronic.parse(self.name)
   end
 
   def content_without_title
