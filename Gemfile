@@ -34,6 +34,7 @@ gem 'words_counted'
 gem 'rest-client'
 gem 'whenever'
 gem 'json'
+gem 'chronic'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
