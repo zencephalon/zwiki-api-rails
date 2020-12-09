@@ -101,6 +101,7 @@ class Node < ApplicationRecord
   def extract_journal_date
     begin
       self.journal_date = Chronic.parse(self.name)
+    rescue
     end
   end
 
