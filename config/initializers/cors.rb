@@ -7,7 +7,7 @@
 
  Rails.application.config.middleware.insert_before 0, Rack::Cors do
    allow do
-     origins 'zwiki.zencephalon.com'
+     origins 'zwiki.zencephalon.com', 'zwiki-client-react.vercel.app'
 
      resource '*',
        headers: :any,
