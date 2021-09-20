@@ -1,5 +1,4 @@
 require 'redcarpet'
-require 'byebug'
 
 class User < ApplicationRecord
   has_secure_password
