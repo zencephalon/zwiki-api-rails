@@ -10,32 +10,33 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181209013324) do
+ActiveRecord::Schema.define(version: 2020_12_09_193207) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "nodes", force: :cascade do |t|
-    t.string   "name"
-    t.string   "content"
-    t.datetime "created_at",                null: false
-    t.datetime "updated_at",                null: false
-    t.string   "title"
-    t.integer  "version",    default: 0
-    t.string   "short_id"
-    t.integer  "user_id"
-    t.boolean  "is_private", default: true
-    t.index ["user_id"], name: "index_nodes_on_user_id", using: :btree
+    t.string "name"
+    t.string "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "title"
+    t.integer "version", default: 0
+    t.string "short_id"
+    t.integer "user_id"
+    t.boolean "is_private", default: true
+    t.datetime "journal_date"
+    t.index ["user_id"], name: "index_nodes_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.string   "name"
-    t.string   "email"
-    t.datetime "created_at",      null: false
-    t.datetime "updated_at",      null: false
-    t.string   "api_key"
-    t.string   "password_digest"
-    t.string   "root_id"
+    t.string "name"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "api_key"
+    t.string "password_digest"
+    t.string "root_id"
   end
 
   add_foreign_key "nodes", "users"

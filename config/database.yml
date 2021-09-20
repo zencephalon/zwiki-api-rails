@@ -12,6 +12,7 @@ default: &default
 development:
   <<: *default
   host: localhost
+  database: zwiki
   username: zen
   password:
 
