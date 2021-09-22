@@ -53,6 +53,22 @@ ctrl-d will enter a timestamp for right now
     end
   end
 
+  def make_nodes_public
+    seen_nodes = {}
+    queue = [self.public_root_id]
+
+    until queue.empty? do
+      current = Node.find_by(short_id: queue.pop)
+      next unless current
+      next if seen_nodes[current.id]
+
+      current.is_private = false
+      current.save
+
+      queue.push(*current.get_links)
+    end
+  end
+
   # nodes reachable from the root, basically
   def get_public_nodes
     seen_nodes = {}
