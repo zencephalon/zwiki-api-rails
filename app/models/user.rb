@@ -64,6 +64,7 @@ ctrl-d will enter a timestamp for right now
 
       current.is_private = false
       current.save
+      seen_nodes[current.id] = true
 
       queue.push(*current.get_links)
     end
