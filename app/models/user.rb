@@ -73,7 +73,7 @@ ctrl-d will enter a timestamp for right now
   # nodes reachable from the root, basically
   def get_public_nodes
     seen_nodes = {}
-    queue = [self.root_id]
+    queue = [self.public_root_id]
 
     until queue.empty? do
       current = Node.find_by(short_id: queue.pop)
@@ -95,7 +95,7 @@ ctrl-d will enter a timestamp for right now
     public_nodes.each do |node|
       urls[node.short_id] = node.url(urls)
     end
-    urls[self.root_id] = 'index'
+    urls[self.public_root_id] = 'index'
 
     public_nodes.each do |node|
       filename = urls[node.short_id]
