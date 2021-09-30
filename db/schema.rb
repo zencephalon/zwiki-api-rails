@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_09_21_001004) do
+ActiveRecord::Schema.define(version: 2021_09_30_213847) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -38,6 +38,7 @@ ActiveRecord::Schema.define(version: 2021_09_21_001004) do
     t.string "password_digest"
     t.string "root_id"
     t.string "public_root_id"
+    t.string "slug"
   end
 
   add_foreign_key "nodes", "users"
