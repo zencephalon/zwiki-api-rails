@@ -1,6 +1,6 @@
-FactoryGirl.define do
+FactoryBot.define do
   factory :node do
-    name "MyString"
-    content "MyString"
+    name { "MyString" }
+    content { "MyString" }
   end
 end

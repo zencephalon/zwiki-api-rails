@@ -5,7 +5,7 @@ require 'chronic'
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 
 class Node < ApplicationRecord
-  include PgSearch
+  include PgSearch::Model
 
   validates :short_id, uniqueness: true
 
