@@ -5,7 +5,7 @@ class PublicController < ApplicationController
   end
 
   def show
-    node = Node.find_by(slug: public_params[:slug])
+    node = @current_user.nodes.find_by(slug: public_params[:slug])
 
     if !node or node.is_private
       render json: "private", status: :unprocessable_entity

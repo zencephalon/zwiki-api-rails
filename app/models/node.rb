@@ -121,6 +121,10 @@ class Node < ApplicationRecord
     self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
   end
 
+  def to_export
+    Node.to_export(self.content)
+  end
+
   def self.to_export(input)
     content = input
 
