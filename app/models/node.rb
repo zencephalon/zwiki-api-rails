@@ -3,6 +3,7 @@ require 'digest'
 require 'chronic'
 
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
+INCLUDE_REGEX = /\{([^{]+)\}\(([^)]+)\)/
 
 class Node < ApplicationRecord
   include PgSearch::Model
@@ -120,25 +121,26 @@ class Node < ApplicationRecord
     self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
   end
 
-  def self.to_export(input, urls)
+  def self.to_export(input)
     content = input
 
-    input.scan(LINK_REGEX).each do |match|
-      matched_url = match[1].chomp('!')
+    input.scan(LINK_REGEX).each do |text, short_id|
+      matched_url = short_id.chomp('!')
+      linked_node = Node.find_by(short_id: short_id)
 
-      if urls[matched_url]
-        content = content.gsub("](#{match[1]})", "](#{urls[matched_url]})")
+      if linked_node.is_private
+        content = content.gsub($&, text)
       else
-        content = content.gsub("](#{match[1]})", "](#{matched_url})")
+        content = content.gsub("](short_id)", "](/#{linked_node.slug})")
       end
     end
 
     input = content
 
-    input.scan(/\{([^{]+)\}\(([^)]+)\)/).each do |match|
-      node = Node.find_by(short_id: match[1])
+    input.scan(INCLUDE_REGEX).each do |text, short_id|
+      node = Node.find_by(short_id: short_id)
       if node
-        content = content.gsub("{#{match[0]}}(#{match[1]})", Node.to_export(node.content_without_title, urls))
+        content = content.gsub("{#{text}}(#{short_id})", Node.to_export(node.content_without_title))
       end
     end
 
