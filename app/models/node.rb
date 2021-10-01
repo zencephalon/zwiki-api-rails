@@ -9,7 +9,7 @@ class Node < ApplicationRecord
 
   validates :short_id, uniqueness: true
 
-  before_save :extract_name, :extract_journal_date
+  before_save :extract_name, :extract_journal_date, :set_slug
   after_create :set_short_id
 
   belongs_to :user
@@ -95,6 +95,18 @@ class Node < ApplicationRecord
     rescue
       self.name = Time.now.to_s
     end
+  end
+
+  def set_slug
+    slug = self.name.parameterize
+
+    return if slug == self.slug
+
+    if Node.find_by(slug: slug)
+      slug += "-#{self.short_id}"
+    end
+
+    self.slug = slug
   end
 
   def extract_journal_date

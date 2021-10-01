@@ -26,6 +26,7 @@ ActiveRecord::Schema.define(version: 2021_09_30_213847) do
     t.integer "user_id"
     t.boolean "is_private", default: true
     t.datetime "journal_date"
+    t.string "slug"
     t.index ["user_id"], name: "index_nodes_on_user_id"
   end
 
@@ -38,7 +39,6 @@ ActiveRecord::Schema.define(version: 2021_09_30_213847) do
     t.string "password_digest"
     t.string "root_id"
     t.string "public_root_id"
-    t.string "slug"
   end
 
   add_foreign_key "nodes", "users"
