@@ -139,13 +139,13 @@ class Node < ApplicationRecord
     content = input
 
     input.scan(LINK_REGEX).each do |text, short_id|
+      next if short_id.starts_with?('http')
+
       matched_url = short_id.chomp('!')
-      linked_node = Node.find_by(short_id: short_id)
+      linked_node = Node.find_by(short_id: matched_url)
 
-      puts linked_node.is_private
-
-      if linked_node.is_private
-        content = content.gsub($&, text)
+      if linked_node && linked_node.is_private
+        content = content.gsub("[#{text}](#{short_id})", text)
       else
         content = content.gsub("](#{short_id})", "](/#{linked_node.slug})")
       end
