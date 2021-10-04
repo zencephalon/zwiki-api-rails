@@ -144,7 +144,7 @@ class Node < ApplicationRecord
       matched_url = short_id.chomp('!')
       linked_node = Node.find_by(short_id: matched_url)
 
-      if linked_node && linked_node.is_private
+      if !linked_node || linked_node.is_private
         content = content.gsub("[#{text}](#{short_id})", text)
       else
         content = content.gsub("](#{short_id})", "](/#{linked_node.slug})")
