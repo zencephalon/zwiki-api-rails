@@ -121,6 +121,16 @@ class Node < ApplicationRecord
     self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
   end
 
+  def next_json
+    return {
+      content: self.to_export,
+      name: self.name,
+      slug: self.slug,
+      created_at: self.created_at,
+      updated_at: self.updated_at,
+    }
+  end
+
   def to_export
     Node.to_export(self.content)
   end

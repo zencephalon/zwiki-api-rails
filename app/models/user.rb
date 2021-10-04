@@ -45,6 +45,10 @@ ctrl-d will enter a timestamp for right now
     user.save
   end
 
+  def public_root
+    self.nodes.find_by(short_id: self.public_root_id)
+  end
+
   def public_slugs
     return self.nodes.where(is_private: false).pluck(:slug)
   end

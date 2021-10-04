@@ -1,7 +1,7 @@
 class PublicController < ApplicationController
 
   def index
-    render json: @current_user.public_slugs
+    render json: @current_user.public_slugs.to_json
   end
 
   def show
@@ -12,11 +12,11 @@ class PublicController < ApplicationController
       return
     end
  
-    render json: {
-      content: node.to_export,
-      name: node.name,
-      slug: node.slug,
-    }
+    render json: node.next_json
+  end
+
+  def root
+    render json: @current_user.public_root.next_json
   end
 
   private
