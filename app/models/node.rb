@@ -99,6 +99,8 @@ class Node < ApplicationRecord
   end
 
   def set_slug
+    return if self.is_private
+
     slug = self.name.parameterize
 
     return if slug == self.slug
