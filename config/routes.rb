@@ -10,5 +10,6 @@ Rails.application.routes.draw do
 
   get 'public/node/:slug', to: 'public#show'
   get 'public/index', to: 'public#index'
+  get 'public/site_index', to: 'public#site_index'
   get 'public/root', to: 'public#root'
 end

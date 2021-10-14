@@ -53,6 +53,10 @@ ctrl-d will enter a timestamp for right now
     return self.nodes.where(is_private: false).pluck(:slug)
   end
 
+  def public_index
+    return self.nodes.where(is_private: false).pluck(:slug, :name, :created_at, :updated_at)
+  end
+
   # Generate a unique API key
   def generate_api_key
     loop do

@@ -4,6 +4,10 @@ class PublicController < ApplicationController
     render json: @current_user.public_slugs.to_json
   end
 
+  def site_index
+    render json: @current_user.public_index.to_json
+  end
+
   def show
     node = @current_user.nodes.find_by(slug: public_params[:slug])
 
