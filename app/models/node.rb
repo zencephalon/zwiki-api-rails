@@ -10,10 +10,13 @@ class Node < ApplicationRecord
 
   validates :short_id, uniqueness: true
 
-  before_save :extract_name, :extract_journal_date, :set_slug
+  before_save :extract_name, :extract_journal_date, :set_slug, :tag_links
   after_create :set_short_id
 
   belongs_to :user
+
+  acts_as_taggable_on :links
+  acts_as_taggable_tenant :user_id
 
   pg_search_scope :search_for, against: {
     name: 'A',
@@ -74,19 +77,19 @@ class Node < ApplicationRecord
     end
   end
 
+  def tag_links
+    self.link_list = self.get_links.join(",")
+  end
+
   def get_links
     links = []
-    node_names = []
     self.content.scan(LINK_REGEX).each do |match|
-      begin
-        matched_url = match[1].chomp('!')
-        node = Node.find_by(short_id: matched_url)
-        links.push(node.short_id)
-        node_names.push(node.name)
-      rescue
-      end
+      next if short_id.starts_with?('http')
+
+      matched_url = match[1].chomp('!')
+      links.push(matched_url)
     end
-    puts "found links #{node_names.to_s} in #{self.name}"
+    # puts "found links #{node_names.to_s} in #{self.name}"
     return links
   end
 
