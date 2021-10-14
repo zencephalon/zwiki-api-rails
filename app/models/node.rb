@@ -83,10 +83,10 @@ class Node < ApplicationRecord
 
   def get_links
     links = []
-    self.content.scan(LINK_REGEX).each do |match|
+    self.content.scan(LINK_REGEX).each do |text, short_id|
       next if short_id.starts_with?('http')
 
-      matched_url = match[1].chomp('!')
+      matched_url = short_id.chomp('!')
       links.push(matched_url)
     end
     # puts "found links #{node_names.to_s} in #{self.name}"
