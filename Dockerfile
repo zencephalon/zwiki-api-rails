@@ -81,8 +81,6 @@ ENV SECRET_KEY_BASE 1
 
 COPY . .
 
-RUN bundle exec rails assets:precompile
-
 ENV PORT 8080
 
 ARG SERVER_COMMAND="bundle exec puma -C config/puma.rb"
