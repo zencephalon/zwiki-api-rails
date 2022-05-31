@@ -133,7 +133,7 @@ class Node < ApplicationRecord
       slug: self.slug,
       created_at: self.created_at,
       updated_at: self.updated_at,
-      backlinks: Node.tagged_with(self.short_id).pluck(:slug, :name)
+      backlinks: Node.tagged_with(self.short_id).where(is_private: false).pluck(:slug, :name)
     }
   end
 
