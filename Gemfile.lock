@@ -241,7 +241,7 @@ DEPENDENCIES
   puma (~> 3.0)
   rack-attack
   rack-cors
-  rails (~> 6.0)
+  rails (~> 6.1.4)
   redcarpet
   rest-client
   rspec-rails (>= 3.5.0)
