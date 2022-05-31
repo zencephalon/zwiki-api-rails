@@ -17,6 +17,8 @@ gem 'puma', '~> 3.0'
 gem 'bcrypt', '~> 3.1.7'
 
 gem 'net-smtp'
+gem 'net-pop'
+gem 'net-imap'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development

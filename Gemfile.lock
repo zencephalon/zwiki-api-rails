@@ -115,6 +115,14 @@ GEM
     mini_mime (1.1.2)
     mini_portile2 (2.8.0)
     minitest (5.15.0)
+    net-imap (0.2.3)
+      digest
+      net-protocol
+      strscan
+    net-pop (0.1.1)
+      digest
+      net-protocol
+      timeout
     net-protocol (0.1.3)
       timeout
     net-smtp (0.3.1)
@@ -206,6 +214,7 @@ GEM
       actionpack (>= 5.2)
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
+    strscan (3.0.3)
     thor (1.2.1)
     timeout (0.3.0)
     tzinfo (2.0.4)
@@ -235,6 +244,8 @@ DEPENDENCIES
   irb
   json
   listen (~> 3.0.5)
+  net-imap
+  net-pop
   net-smtp
   pg
   pg_search
