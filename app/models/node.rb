@@ -4,6 +4,8 @@ require 'chronic'
 
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 INCLUDE_REGEX = /\{([^{]+)\}\(([^)]+)\)/
+# DATE_REGEX matches format Fri Nov 25 2022
+DATE_REGEX = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}) (\d{4})/
 
 class Node < ApplicationRecord
   include PgSearch::Model
@@ -54,6 +56,10 @@ class Node < ApplicationRecord
       name: 'Zencephalon',
       wordcount: count
     }
+  end
+
+  def is_day_entry
+    self.name.match(DATE_REGEX)
   end
 
   def word_count

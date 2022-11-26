@@ -28,6 +28,17 @@ class NodesController < ApplicationController
     @node = Node.new(node_params)
     @node.user_id = @current_user.id
 
+    unless @node.content
+      @node.content = "# " + @node.name + "\n\n"
+      if @node.is_day_entry
+        day_template = Node.find_by(name: '__journal_template__')
+
+        if day_template
+          @node.content += day_template.content_without_title
+        end
+      end
+    end
+
     if @node.save
       render json: @node, status: :created, location: @node
     else
