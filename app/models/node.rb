@@ -4,6 +4,7 @@ require 'chronic'
 
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 INCLUDE_REGEX = /\{([^{]+)\}\(([^)]+)\)/
+URL_SAFETY_REGEX = /[&$\+,:;=\?@#\s<>\[\]\{\}[\/]|\\\^%]+/
 # DATE_REGEX matches format Fri Nov 25 2022
 DATE_REGEX = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}) (\d{4})/
 
@@ -110,7 +111,7 @@ class Node < ApplicationRecord
   def set_slug
     return if self.is_private
 
-    slug = self.name.parameterize
+    slug = self.name.gsub(URL_SAFETY_REGEX, '-').downcase
 
     return if slug == self.slug && !self.slug.empty?
 
