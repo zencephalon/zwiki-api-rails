@@ -112,7 +112,7 @@ class Node < ApplicationRecord
 
     slug = self.name.parameterize
 
-    return if slug == self.slug
+    return if slug == self.slug && !self.slug.empty?
 
     if Node.find_by(slug: slug)
       slug += "-#{self.short_id}"
