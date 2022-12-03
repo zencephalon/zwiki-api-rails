@@ -18,20 +18,19 @@ class NodesController < ApplicationController
 
   # POST /nodes
   def create
-    node = Node.find_by(name: node_params[:name])
+    node = @current_user.nodes.find_by(name: node_params[:name])
 
     if node
       render json: node, location: node
       return
     end
 
-    @node = Node.new(node_params)
-    @node.user_id = @current_user.id
+    @node = @current_user.nodes.new(node_params)
 
     unless @node.content
       @node.content = "# " + @node.name + "\n\n"
       if @node.is_day_entry
-        day_template = Node.find_by(name: '__journal_template__')
+        day_template = @current_user.nodes.find_by(name: '__journal_template__')
 
         if day_template
           @node.content += day_template.content_without_title
