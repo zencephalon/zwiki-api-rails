@@ -5,6 +5,7 @@ require 'chronic'
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 INCLUDE_REGEX = /\{([^{]+)\}\(([^)]+)\)/
 URL_SAFETY_REGEX = /[&$\+,:;=\?@#\s<>\[\]\{\}[\/]|\\\^%]+/
+PRIVACY_FOLD_REGEX = /₴.*₴/
 # DATE_REGEX matches format Fri Nov 25 2022
 DATE_REGEX = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}) (\d{4})/
 
@@ -149,6 +150,8 @@ class Node < ApplicationRecord
   end
 
   def self.to_export(input)
+    # split over the privacy fold first
+    input = input.split(PRIVACY_FOLD_REGEX).first
     content = input
 
     input.scan(LINK_REGEX).each do |text, short_id|
