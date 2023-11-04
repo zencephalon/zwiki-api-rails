@@ -43,6 +43,6 @@ class QuestsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def quest_params
-      params.require(:quest).permit(:user_id, :blob)
+      params.permit(:blob)
     end
 end
