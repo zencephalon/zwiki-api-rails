@@ -19,7 +19,7 @@ class QuestsController < ApplicationController
 
   # PATCH/PUT /quests/1
   def update
-    if @quest.update(blob: quest_params[:blob])
+    if @quest.update(blob: params[:blob])
       render json: @quest
     else
       render json: @quest.errors, status: :unprocessable_entity
@@ -43,6 +43,6 @@ class QuestsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def quest_params
-      params.permit(:blob)
+      params.require(:quest).permit(blob: {})
     end
 end
