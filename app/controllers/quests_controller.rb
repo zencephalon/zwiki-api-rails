@@ -19,7 +19,7 @@ class QuestsController < ApplicationController
 
   # PATCH/PUT /quests/1
   def update
-    if @quest.update(quest_params)
+    if @quest.update(blob: quest_params[:blob])
       render json: @quest
     else
       render json: @quest.errors, status: :unprocessable_entity
