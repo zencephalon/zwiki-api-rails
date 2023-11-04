@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resources :quests
+  put 'quests', to: 'quests#update'
+  get 'quests', to: 'quests#show'
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   resources :nodes
   resources :users do
