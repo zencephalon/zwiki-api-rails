@@ -34,9 +34,9 @@ class QuestsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_quest
-      @quest = Quest.find_by(user_id: @user.id)
+      @quest = Quest.find_by(user_id: @current_user.id)
       if @quest.nil?
-        @quest = Quest.new(user_id: @user.id, blob: {})
+        @quest = Quest.new(user_id: @current_user.id, blob: {})
         @quest.save
       end
     end
