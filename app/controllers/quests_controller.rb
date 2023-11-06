@@ -19,6 +19,10 @@ class QuestsController < ApplicationController
 
   # PATCH/PUT /quests/1
   def update
+    if @quest.version >= params[:version].to_i
+      render json: { server_version: @quest.version, client_version: params[:version] }, status: :unprocessable_entity
+      return
+    end
     if @quest.update(blob: params[:blob])
       render json: @quest
     else
