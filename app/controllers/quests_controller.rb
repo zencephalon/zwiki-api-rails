@@ -23,7 +23,7 @@ class QuestsController < ApplicationController
       render json: { server_version: @quest.version, client_version: params[:version] }, status: :unprocessable_entity
       return
     end
-    if @quest.update(blob: params[:blob])
+    if @quest.update(blob: params[:blob], version: params[:version].to_i)
       render json: @quest
     else
       render json: @quest.errors, status: :unprocessable_entity
