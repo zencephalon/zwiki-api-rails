@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :questlogs
   # resources :quests
   put 'quests', to: 'quests#update'
   get 'quests', to: 'quests#show'
