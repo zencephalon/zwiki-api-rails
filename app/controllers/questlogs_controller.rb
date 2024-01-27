@@ -3,7 +3,7 @@ class QuestlogsController < ApplicationController
 
   # GET /questlogs
   def index
-    @questlogs = Questlog.all
+    @questlogs = @current_user.questlogs
 
     render json: @questlogs
   end
@@ -15,7 +15,7 @@ class QuestlogsController < ApplicationController
 
   # POST /questlogs
   def create
-    @questlog = Questlog.new(questlog_params)
+    @questlog = @current_user.questlogs.new(questlog_params)
 
     if @questlog.save
       render json: @questlog, status: :created, location: @questlog
@@ -41,7 +41,7 @@ class QuestlogsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_questlog
-      @questlog = Questlog.find(params[:id])
+      @questlog = @current_user.questlogs.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

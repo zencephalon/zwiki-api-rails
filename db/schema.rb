@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_11_06_230309) do
+ActiveRecord::Schema.define(version: 2024_01_18_004909) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -29,6 +29,15 @@ ActiveRecord::Schema.define(version: 2023_11_06_230309) do
     t.index ["short_id"], name: "index_nodes_on_short_id"
     t.index ["slug"], name: "index_nodes_on_slug"
     t.index ["user_id"], name: "index_nodes_on_user_id"
+  end
+
+  create_table "questlogs", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "description"
+    t.boolean "private"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id"], name: "index_questlogs_on_user_id"
   end
 
   create_table "quests", force: :cascade do |t|
@@ -81,6 +90,7 @@ ActiveRecord::Schema.define(version: 2023_11_06_230309) do
   end
 
   add_foreign_key "nodes", "users"
+  add_foreign_key "questlogs", "users"
   add_foreign_key "quests", "users"
   add_foreign_key "taggings", "tags"
 end
