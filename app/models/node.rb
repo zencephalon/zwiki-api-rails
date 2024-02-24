@@ -134,6 +134,11 @@ class Node < ApplicationRecord
     self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
   end
 
+  def append(text)
+    self.content = "#{self.content}#{text}"
+    self.version += 1
+  end
+
   def next_json
     return {
       content: self.to_export,

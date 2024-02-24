@@ -1,5 +1,5 @@
 class NodesController < ApplicationController
-  before_action :set_node, only: [:show, :update, :destroy]
+  before_action :set_node, only: [:show, :update, :destroy, :append]
 
   # GET /nodes
   def index
@@ -55,6 +55,19 @@ class NodesController < ApplicationController
       return
     end
     if @node.update(node_params)
+      render json: @node
+    else
+      render json: @node.errors, status: :unprocessable_entity
+    end
+  end
+
+  def append
+    if @current_user.id != @node.user_id
+      render status: :forbidden
+    end
+    text = params.permit(:text)[:text]
+    @node.append(text)
+    if @node.save
       render json: @node
     else
       render json: @node.errors, status: :unprocessable_entity
