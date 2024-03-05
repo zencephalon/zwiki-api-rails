@@ -7,6 +7,11 @@ class NodesController < ApplicationController
     render json: q.empty? ? @current_user.nodes.all : @current_user.nodes.search_for(q), each_serializer: NodeShortSerializer
   end
 
+  def search
+    q = search_params[:q]
+    render json: q.empty? ? [] : @current_user.nodes.search_for(q), each_serializer: NodeSerializer
+  end
+
   # GET /nodes/1
   def show
     if @current_user.id == @node.user_id

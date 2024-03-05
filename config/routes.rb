@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   get 'quests', to: 'quests#show'
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   resources :nodes
+  get 'nodes/search', to: 'nodes#search'
   post 'nodes/:id/append', to: 'nodes#append'
 
   resources :users do
