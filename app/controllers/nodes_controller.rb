@@ -9,7 +9,7 @@ class NodesController < ApplicationController
 
   def search
     q = search_params[:q]
-    render json: q.empty? ? [] : @current_user.nodes.search_for(q), each_serializer: NodeSerializer
+    render json: q.empty? ? [] : @current_user.nodes.search_for(q).limit(5), each_serializer: NodeSerializer
   end
 
   # GET /nodes/1
