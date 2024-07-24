@@ -135,8 +135,10 @@ class Node < ApplicationRecord
   end
 
   def append(text)
-    self.content = "#{self.content}#{text}"
-    self.version += 1
+    unless self.content.match(text)
+      self.content = "#{self.content}#{text}"
+      self.version += 1
+    end
   end
 
   def next_json
