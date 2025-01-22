@@ -26,3 +26,5 @@
 
 nodes.csv
 nodes.json
+.env
+nodes.txt

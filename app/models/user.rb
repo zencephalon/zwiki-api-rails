@@ -118,4 +118,18 @@ ctrl-d will enter a timestamp for right now
       end
     end
   end
+
+  def dump_nodes_to_json(search)
+    File.open('nodes.json', 'w:UTF-8') do |f|
+      nodes.search_for(search).each do |node|
+        f.puts({
+          content: node.content,
+          name: node.name,
+          short_id: node.short_id,
+          created_at: node.created_at,
+          updated_at: node.updated_at,
+        }.to_json)
+      end
+    end
+  end
 end
