@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   get 'nodes/search', to: 'nodes#search'
   resources :nodes
   post 'nodes/:id/append', to: 'nodes#append'
+  post 'nodes/:id/magic_append', to: 'nodes#magic_append'
 
   resources :users do
     get 'me', to: 'users#me', on: :collection

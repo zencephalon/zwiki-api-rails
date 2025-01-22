@@ -39,6 +39,7 @@ gem 'rest-client'
 gem 'whenever'
 gem 'json'
 gem 'chronic'
+gem 'anthropic'
 
 gem 'acts-as-taggable-on', '~> 8.0'
 

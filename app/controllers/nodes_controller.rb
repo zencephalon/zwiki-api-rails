@@ -1,5 +1,5 @@
 class NodesController < ApplicationController
-  before_action :set_node, only: [:show, :update, :destroy, :append]
+  before_action :set_node, only: [:show, :update, :destroy, :append, :magic_append]
 
   # GET /nodes
   def index
@@ -79,6 +79,48 @@ class NodesController < ApplicationController
     end
   end
 
+  def magic_append
+    if @current_user.id != @node.user_id
+      render status: :forbidden
+      return
+    end
+
+    text = magic_append_params[:text]
+    
+    client = Anthropic::Client.new(access_token: ENV['ANTHROPIC_API_KEY'])
+    
+    system_prompt = "You assist the user's personal knowledge management system. You'll be given a new journal entry and an existing knowledge entry. Update it to reflect the new information. Always include events that occurred. Filter extraneous information. Don't elaborate or extrapolate. Keep the pre-existing content intact unless it needs modification to reflect the new information. Return only the updated Markdown."
+    
+    message = "#{text}\n\n============================\n\n#{@node.content}"
+    
+    response = client.messages(
+      parameters: {
+        model: "claude-3-5-sonnet-20241022",
+        system: system_prompt,
+        messages: [
+          { role: "user", content: message }
+        ],
+        max_tokens: 2000
+      }
+    )
+
+    ai_response = response["content"].first["text"]
+
+    puts ai_response
+    
+    if ai_response
+      @node.content = ai_response
+      @node.version = @node.version + 1
+      if @node.save
+        render json: @node
+      else
+        render json: @node.errors, status: :unprocessable_entity
+      end
+    else
+      render json: { error: "Failed to get AI response" }, status: :unprocessable_entity
+    end
+  end
+
   # DELETE /nodes/1
   def destroy
     if @current_user.id != @node.user_id
@@ -101,5 +143,9 @@ class NodesController < ApplicationController
 
     def search_params
       params.permit(:q)
+    end
+
+    def magic_append_params
+      params.permit(:text, :id, :node)
     end
 end
