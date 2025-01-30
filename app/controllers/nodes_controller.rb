@@ -12,6 +12,49 @@ class NodesController < ApplicationController
     render json: q.empty? ? [] : @current_user.nodes.search_for(q).limit(1), each_serializer: NodeSerializer
   end
 
+  def full_search_with_summary
+    q = search_params[:q]
+    
+    if q.empty?
+      render json: { summary: "", nodes: [] }
+      return
+    end
+
+    nodes = @current_user.nodes.search_for(q).limit(15)
+    
+    if nodes.empty?
+      render json: { summary: "", nodes: [] }
+      return
+    end
+
+    # Prepare content for summarization
+    content_to_summarize = nodes.map do |node|
+      "# #{node.name}\n#{node.content}"
+    end.join("\n\n---\n\n")
+    
+    client = Anthropic::Client.new(access_token: ENV['ANTHROPIC_API_KEY'])
+    
+    system_prompt = "You are a knowledge summarizer. Given multiple documents or notes, create a comprehensive yet concise summary that captures the key information, relationships, and insights across all the provided content. Focus on factual information and clear connections between ideas. Return the summary without an introduction."
+    
+    response = client.messages(
+      parameters: {
+        model: "claude-3-5-sonnet-20241022",
+        system: system_prompt,
+        messages: [
+          { role: "user", content: "Please summarize the following content:\n\n#{content_to_summarize}" }
+        ],
+        max_tokens: 2000
+      }
+    )
+
+    summary = response["content"].first["text"]
+    
+    render json: {
+      summary: summary,
+      nodes: nodes.map { |node| NodeShortSerializer.new(node) }
+    }
+  end
+
   # GET /nodes/1
   def show
     if @current_user.id == @node.user_id
