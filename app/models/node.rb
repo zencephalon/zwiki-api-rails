@@ -209,6 +209,7 @@ class Node < ApplicationRecord
 
     Thread.new do
       begin
+        Rails.logger.info "Revalidating cache for node #{self.slug}"
         RestClient.post(
           "https://zencephalon.com/api/revalidate",
           { slug: self.slug }.to_json,
