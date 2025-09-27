@@ -16,6 +16,7 @@ class Node < ApplicationRecord
 
   before_save :extract_name, :extract_journal_date, :set_slug, :tag_links
   after_create :set_short_id
+  after_save :revalidate_cache
 
   belongs_to :user
 
@@ -198,6 +199,28 @@ class Node < ApplicationRecord
       counted_url = "#{url}-#{counter}"
       return counted_url unless urls[counted_url]
       counter += 1
+    end
+  end
+
+  private
+
+  def revalidate_cache
+    return if self.slug.blank? || ENV['REVALIDATION_TOKEN'].blank?
+
+    Thread.new do
+      begin
+        RestClient.post(
+          "https://zencephalon.com/api/revalidate",
+          { slug: self.slug }.to_json,
+          {
+            content_type: :json,
+            accept: :json,
+            authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
+          }
+        )
+      rescue => e
+        Rails.logger.warn "Cache revalidation failed for node #{self.slug}: #{e.message}"
+      end
     end
   end
 end
