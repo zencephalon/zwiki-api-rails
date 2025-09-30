@@ -205,7 +205,10 @@ class Node < ApplicationRecord
   private
 
   def revalidate_cache
-    return if self.slug.blank? || ENV['REVALIDATION_TOKEN'].blank?
+    if self.slug.blank? || ENV['REVALIDATION_TOKEN'].blank?
+      Rails.logger.info "Skipping cache revalidation for node #{self.slug} because slug or revalidation token is blank"
+      return
+    end
 
     Thread.new do
       begin
