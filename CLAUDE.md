@@ -50,9 +50,9 @@ rails console             # Rails console for debugging
   - Uses `short_id` for compact linking (e.g. "ABC123")
   - Supports internal links via `[Link Text](short_id)` syntax
   - Full-text search via PgSearch with highlighting
-  - Tagging system for tracking internal links
+  - Tagging system for tracking internal links (via acts-as-taggable-on)
   - Privacy controls (`is_private` field)
-  - Versioning with conflict detection
+  - Optimistic locking via `version` field (update rejected if client version ≤ server version)
 
 - **Quest/Questlog**: Secondary features for task/goal tracking
 
@@ -67,13 +67,15 @@ rails console             # Rails console for debugging
 
 ### API Endpoints
 
-- `GET /nodes` - List/search user's nodes
+- `GET /nodes` - List/search user's nodes (pass `q` param for search)
 - `GET /nodes/search` - Search with single result
 - `GET /nodes/full_search_with_summary` - Search with AI-generated summary
 - `POST /nodes/:id/append` - Append text to existing node
 - `POST /nodes/:id/magic_append` - AI-assisted content merging
 - `GET /public/node/:slug` - Public node access
-- Authentication via `api_key` header
+- `GET /public/index` - List all public node slugs
+- `GET /public/root` - Get public root node
+- Authentication via `Authorization` header containing API key
 
 ### External Integrations
 
@@ -84,6 +86,7 @@ rails console             # Rails console for debugging
 ### Environment Variables
 
 - `ANTHROPIC_API_KEY`: Required for AI features (search summaries, magic append)
+- `REVALIDATION_TOKEN`: Optional, for cache revalidation with frontend
 - Database credentials in `config/database.yml`
 
 ## Testing Patterns
