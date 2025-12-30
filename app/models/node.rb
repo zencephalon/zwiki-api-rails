@@ -215,7 +215,7 @@ class Node < ApplicationRecord
         Rails.logger.info "Revalidating cache for node #{self.slug}"
         response = RestClient::Request.execute(
           method: :post,
-          url: "https://zencephalon.com/api/revalidate",
+          url: "https://www.zencephalon.com/api/revalidate",
           payload: { slug: self.slug }.to_json,
           headers: {
             content_type: :json,
