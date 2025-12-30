@@ -213,15 +213,18 @@ class Node < ApplicationRecord
     Thread.new do
       begin
         Rails.logger.info "Revalidating cache for node #{self.slug}"
-        RestClient.post(
-          "https://zencephalon.com/api/revalidate",
-          { slug: self.slug }.to_json,
-          {
+        response = RestClient::Request.execute(
+          method: :post,
+          url: "https://zencephalon.com/api/revalidate",
+          payload: { slug: self.slug }.to_json,
+          headers: {
             content_type: :json,
             accept: :json,
             authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
-          }
+          },
+          max_redirects: 3
         )
+        Rails.logger.info "Cache revalidation succeeded for node #{self.slug}: #{response.code}"
       rescue => e
         Rails.logger.warn "Cache revalidation failed for node #{self.slug}: #{e.message}"
       end
