@@ -11,7 +11,7 @@ class ApiToken < ApplicationRecord
   scope :full_access, -> { where(token_type: 'full_access') }
   scope :active, -> { where('expires_at IS NULL OR expires_at > ?', Time.current) }
 
-  before_create :generate_token
+  before_validation :generate_token, on: :create
 
   def expired?
     expires_at.present? && expires_at < Time.current
