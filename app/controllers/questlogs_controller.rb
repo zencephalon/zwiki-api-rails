@@ -1,5 +1,6 @@
 class QuestlogsController < ApplicationController
   before_action :set_questlog, only: [:show, :update, :destroy]
+  before_action :require_full_access, only: [:create, :update, :destroy]
 
   # GET /questlogs
   def index

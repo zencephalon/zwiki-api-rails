@@ -10,10 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_01_18_004909) do
+ActiveRecord::Schema.define(version: 2026_01_08_032912) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "api_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token", null: false
+    t.string "token_type", null: false
+    t.datetime "expires_at"
+    t.datetime "last_used_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["token"], name: "index_api_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
 
   create_table "nodes", id: :serial, force: :cascade do |t|
     t.string "name"
@@ -89,6 +101,7 @@ ActiveRecord::Schema.define(version: 2024_01_18_004909) do
     t.string "public_root_id"
   end
 
+  add_foreign_key "api_tokens", "users"
   add_foreign_key "nodes", "users"
   add_foreign_key "questlogs", "users"
   add_foreign_key "quests", "users"

@@ -1,5 +1,6 @@
 class NodesController < ApplicationController
   before_action :set_node, only: [:show, :update, :destroy, :append, :magic_append]
+  before_action :require_full_access, only: [:create, :update, :destroy, :append, :magic_append]
 
   # GET /nodes
   def index

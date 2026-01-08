@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
   skip_before_action :authenticate, only: [:create]
+  before_action :require_full_access, only: [:update, :destroy]
 
   # GET /users/me
   def me

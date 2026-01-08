@@ -5,6 +5,7 @@ class User < ApplicationRecord
 
   has_many :nodes
   has_many :questlogs
+  has_many :api_tokens, dependent: :destroy
 
   # Assign an API key on create
   before_create do |user|
@@ -58,12 +59,20 @@ ctrl-d will enter a timestamp for right now
     return self.nodes.where(is_private: false).pluck(:slug, :name, :created_at, :updated_at)
   end
 
-  # Generate a unique API key
+  # Generate a unique API key (legacy)
   def generate_api_key
     loop do
       token = SecureRandom.base64.tr('+/=', 'Qrt')
       break token unless User.exists?(api_key: token)
     end
+  end
+
+  def create_read_only_token
+    api_tokens.create!(token_type: 'read_only', expires_at: nil)
+  end
+
+  def create_full_access_token
+    api_tokens.create!(token_type: 'full_access', expires_at: ApiToken::FULL_ACCESS_EXPIRY.from_now)
   end
 
   def make_nodes_public

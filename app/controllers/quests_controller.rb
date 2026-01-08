@@ -1,5 +1,6 @@
 class QuestsController < ApplicationController
   before_action :set_quest, only: [:show, :update, :destroy]
+  before_action :require_full_access, only: [:update, :destroy]
 
   # GET /quests/1
   def show
