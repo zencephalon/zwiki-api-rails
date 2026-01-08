@@ -30,6 +30,9 @@ rails server  # Start development server on port 3000
 ```
 
 ### Database
+
+The following runs on the server upon deployment: `rails db:migrate && rails server -p $PORT -e ${RAILS_ENV:-production}` so no need to run db:migrate
+
 ```bash
 rails db:migrate          # Run pending migrations
 rails db:rollback         # Rollback last migration
