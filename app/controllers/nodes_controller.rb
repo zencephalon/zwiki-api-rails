@@ -149,8 +149,6 @@ class NodesController < ApplicationController
 
     ai_response = response["content"].first["text"]
 
-    puts ai_response
-    
     if ai_response
       @node.content = ai_response
       @node.version = @node.version + 1

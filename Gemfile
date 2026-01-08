@@ -2,11 +2,12 @@ source 'https://rubygems.org'
 
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.1.4'
+gem 'rails', '~> 6.1.7'
 # Use sqlite3 as the database for Active Record
 gem 'pg'
 gem 'pg_search'
-gem 'irb'
+gem 'irb', '~> 1.3.7'
+gem 'logger', '~> 1.5.3'
 # Use Puma as the app server
 gem 'puma', '6.4.0'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder

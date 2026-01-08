@@ -46,6 +46,6 @@ class QuestlogsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def questlog_params
-      params.require(:questlog).permit(:user_id, :description, :private)
+      params.require(:questlog).permit(:description, :private)
     end
 end
