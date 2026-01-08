@@ -10,9 +10,12 @@ Rails.application.routes.draw do
   post 'nodes/:id/append', to: 'nodes#append'
   post 'nodes/:id/magic_append', to: 'nodes#magic_append'
 
-  resources :users do
-    get 'me', to: 'users#me', on: :collection
-  end
+  # User routes - scoped to current user only (no index or show by id)
+  post 'users', to: 'users#create'
+  get 'users/me', to: 'users#me'
+  patch 'users/me', to: 'users#update'
+  put 'users/me', to: 'users#update'
+  delete 'users/me', to: 'users#destroy'
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   post 'login', to: 'sessions#login'
   post 'register', to: 'sessions#register'

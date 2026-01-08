@@ -46,21 +46,6 @@ class Node < ApplicationRecord
     end
   end
 
-  def self.update_word_count
-    count = 0
-    Node.all.each do |node|
-      count += node.word_count
-    end
-
-    hashable = 'ZqcB1SUI4FsjXTlkTWZG' + 'Zencephalon' + count.to_s
-    sha = Digest::SHA1.hexdigest hashable
-    RestClient.put "https://nanowrimo.org/api/wordcount", {
-      hash: sha,
-      name: 'Zencephalon',
-      wordcount: count
-    }
-  end
-
   def is_day_entry
     self.name.match(DATE_REGEX)
   end
