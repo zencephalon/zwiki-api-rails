@@ -97,12 +97,23 @@ class NodesController < ApplicationController
   def update
     if @current_user.id != @node.user_id
       render status: :forbidden
+      return
     end
     if @node.version >= node_params[:version].to_i
       render json: { server_version: @node.version, client_version: node_params[:version] }, status: :unprocessable_entity
       return
     end
-    if @node.update(node_params)
+
+    # Assign attributes without saving to check for changes
+    @node.assign_attributes(node_params)
+
+    # Only save if there are actual changes
+    unless @node.changed?
+      render json: @node
+      return
+    end
+
+    if @node.save
       render json: @node
     else
       render json: @node.errors, status: :unprocessable_entity
