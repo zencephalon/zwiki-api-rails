@@ -11,10 +11,14 @@ default: &default
 
 development:
   <<: *default
+<% if ENV['DATABASE_URL'] %>
+  url: <%= ENV['DATABASE_URL'] %>
+<% else %>
   host: localhost
   database: zwiki
   username: zen
   password:
+<% end %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

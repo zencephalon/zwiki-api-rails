@@ -14,13 +14,13 @@ class Node < ApplicationRecord
 
   validates :short_id, uniqueness: true
 
-  before_save :extract_name, :extract_journal_date, :set_slug, :tag_links
+  before_save :extract_name, :extract_journal_date, :set_slug, :tag_links, :tag_inclusions
   after_create :set_short_id
   after_save :revalidate_cache
 
   belongs_to :user
 
-  acts_as_taggable_on :links
+  acts_as_taggable_on :links, :inclusions
   acts_as_taggable_tenant :user_id
 
   pg_search_scope :search_for, against: {
@@ -75,6 +75,10 @@ class Node < ApplicationRecord
     self.link_list = self.get_links.join(",")
   end
 
+  def tag_inclusions
+    self.inclusion_list = self.get_inclusions.join(",")
+  end
+
   def get_links
     links = []
     self.content.scan(LINK_REGEX).each do |text, short_id|
@@ -85,6 +89,14 @@ class Node < ApplicationRecord
     end
     # puts "found links #{node_names.to_s} in #{self.name}"
     return links
+  end
+
+  def get_inclusions
+    inclusions = []
+    self.content.scan(INCLUDE_REGEX).each do |text, short_id|
+      inclusions.push(short_id)
+    end
+    inclusions
   end
 
   def extract_name
@@ -187,32 +199,71 @@ class Node < ApplicationRecord
     end
   end
 
+  def collect_affected_nodes(max_depth: 10)
+    affected = Set.new
+    visited = Set.new
+    queue = [[self, 0]]
+
+    while queue.any?
+      current_node, depth = queue.shift
+      next if visited.include?(current_node.id)
+
+      visited.add(current_node.id)
+
+      # Only look for includers if we haven't reached max depth
+      next if depth >= max_depth
+
+      includers = Node.tagged_with(current_node.short_id, on: :inclusions)
+      includers.each do |includer|
+        unless visited.include?(includer.id)
+          affected.add(includer)
+          queue.push([includer, depth + 1])
+        end
+      end
+    end
+
+    affected
+  end
+
   private
 
   def revalidate_cache
-    if self.slug.blank? || ENV['REVALIDATION_TOKEN'].blank?
-      Rails.logger.info "Skipping cache revalidation for node #{self.slug} because slug or revalidation token is blank"
-      return
+    return if ENV['REVALIDATION_TOKEN'].blank?
+
+    slugs_to_revalidate = []
+    slugs_to_revalidate << self.slug if self.slug.present?
+
+    collect_affected_nodes.each do |node|
+      slugs_to_revalidate << node.slug if node.slug.present?
     end
 
+    return if slugs_to_revalidate.empty?
+
+    Rails.logger.info "Revalidating cache for #{slugs_to_revalidate.length} nodes: #{slugs_to_revalidate.join(', ')}"
+
     Thread.new do
-      begin
-        Rails.logger.info "Revalidating cache for node #{self.slug}"
-        response = RestClient::Request.execute(
-          method: :post,
-          url: "https://www.zencephalon.com/api/revalidate",
-          payload: { slug: self.slug }.to_json,
-          headers: {
-            content_type: :json,
-            accept: :json,
-            authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
-          },
-          max_redirects: 3
-        )
-        Rails.logger.info "Cache revalidation succeeded for node #{self.slug}: #{response.code}"
-      rescue => e
-        Rails.logger.warn "Cache revalidation failed for node #{self.slug}: #{e.message}"
+      threads = slugs_to_revalidate.map do |slug|
+        Thread.new do
+          begin
+            RestClient::Request.execute(
+              method: :post,
+              url: "https://www.zencephalon.com/api/revalidate",
+              payload: { slug: slug }.to_json,
+              headers: {
+                content_type: :json,
+                accept: :json,
+                authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
+              },
+              max_redirects: 3,
+              timeout: 10
+            )
+            Rails.logger.info "Cache revalidation succeeded for #{slug}"
+          rescue => e
+            Rails.logger.warn "Cache revalidation failed for #{slug}: #{e.message}"
+          end
+        end
       end
+      threads.each(&:join)
     end
   end
 end
