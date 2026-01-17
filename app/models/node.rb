@@ -72,11 +72,11 @@ class Node < ApplicationRecord
   end
 
   def tag_links
-    self.link_list = self.get_links.join(",")
+    self.link_list = self.get_links.reject(&:blank?).join(",")
   end
 
   def tag_inclusions
-    self.inclusion_list = self.get_inclusions.join(",")
+    self.inclusion_list = self.get_inclusions.reject(&:blank?).join(",")
   end
 
   def get_links

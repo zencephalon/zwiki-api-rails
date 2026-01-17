@@ -81,7 +81,7 @@ class VaultImporter
     match = raw_content.match(FRONTMATTER_REGEX)
     return nil unless match
 
-    YAML.safe_load(match[1])
+    YAML.safe_load(match[1], permitted_classes: [Date, Time, DateTime])
   rescue Psych::SyntaxError
     nil
   end
