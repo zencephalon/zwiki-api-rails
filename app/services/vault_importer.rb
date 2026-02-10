@@ -121,13 +121,7 @@ class VaultImporter
 
     case mode
     when :sync
-      # Only update if file is newer
-      file_mtime = File.mtime(filepath)
-      if file_mtime > node.updated_at
-        update_node(node, content, frontmatter)
-      else
-        @skipped_count += 1
-      end
+      update_node(node, content, frontmatter)
     when :force
       update_node(node, content, frontmatter)
     when :skip_existing
@@ -138,6 +132,12 @@ class VaultImporter
   def update_node(node, content, frontmatter)
     node.content = content
     node.is_private = frontmatter['is_private'] if frontmatter.key?('is_private')
+
+    unless node.changed?
+      @skipped_count += 1
+      return
+    end
+
     node.version += 1
     node.save!
     @updated_count += 1

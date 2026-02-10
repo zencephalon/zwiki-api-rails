@@ -47,15 +47,13 @@ RSpec.describe VaultImporter do
       expect(new_node.content).to include('Some content here')
     end
 
-    it 'updates existing nodes when short_id matches and file is newer' do
+    it 'updates existing nodes when content has changed' do
       node = user.nodes.create!(content: "# Existing\n\nOld content")
-      node.update_column(:updated_at, 1.day.ago)
 
-      filepath = write_markdown_file('Existing', "# Existing\n\nNew content", {
+      write_markdown_file('Existing', "# Existing\n\nNew content", {
         'short_id' => node.short_id,
         'is_private' => true
       })
-      FileUtils.touch(filepath)
 
       importer = VaultImporter.new(user, import_dir)
       result = importer.import(mode: :sync)
@@ -65,29 +63,39 @@ RSpec.describe VaultImporter do
       expect(node.content).to include('New content')
     end
 
-    it 'skips nodes when file is older in sync mode' do
-      node = user.nodes.create!(content: "# Existing\n\nOld content")
+    it 'skips nodes when content is unchanged in sync mode' do
+      node = user.nodes.create!(content: "# Existing\n\nSame content")
 
-      filepath = write_markdown_file('Existing', "# Existing\n\nNew content", {
+      write_markdown_file('Existing', "# Existing\n\nSame content", {
         'short_id' => node.short_id
       })
-      FileUtils.touch(filepath, mtime: 1.day.ago.to_time)
 
       importer = VaultImporter.new(user, import_dir)
       result = importer.import(mode: :sync)
 
       expect(result[:skipped]).to eq(1)
-      node.reload
-      expect(node.content).to include('Old content')
+      expect(node.reload.updated_at).to eq(node.updated_at)
     end
 
-    it 'always updates in force mode regardless of timestamp' do
-      node = user.nodes.create!(content: "# Existing\n\nOld content")
+    it 'skips nodes when content is unchanged in force mode' do
+      node = user.nodes.create!(content: "# Existing\n\nSame content")
 
-      filepath = write_markdown_file('Existing', "# Existing\n\nForced content", {
+      write_markdown_file('Existing', "# Existing\n\nSame content", {
         'short_id' => node.short_id
       })
-      FileUtils.touch(filepath, mtime: 1.day.ago.to_time)
+
+      importer = VaultImporter.new(user, import_dir)
+      result = importer.import(mode: :force)
+
+      expect(result[:skipped]).to eq(1)
+    end
+
+    it 'updates in force mode when content has changed' do
+      node = user.nodes.create!(content: "# Existing\n\nOld content")
+
+      write_markdown_file('Existing', "# Existing\n\nForced content", {
+        'short_id' => node.short_id
+      })
 
       importer = VaultImporter.new(user, import_dir)
       result = importer.import(mode: :force)
@@ -145,7 +153,6 @@ RSpec.describe VaultImporter do
 
     it 'returns counts of created, updated, and skipped nodes' do
       existing_node = user.nodes.create!(content: "# Existing\n\nOld")
-      existing_node.update_column(:updated_at, 1.day.ago)
 
       write_markdown_file('New Note', "# New Note\n\nNew content")
       write_markdown_file('Existing', "# Existing\n\nUpdated", {
