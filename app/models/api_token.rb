@@ -2,7 +2,7 @@ class ApiToken < ApplicationRecord
   belongs_to :user
 
   TOKEN_TYPES = %w[read_only full_access].freeze
-  FULL_ACCESS_EXPIRY = 7.days
+  FULL_ACCESS_EXPIRY = 6.months
 
   validates :token, presence: true, uniqueness: true
   validates :token_type, presence: true, inclusion: { in: TOKEN_TYPES }
