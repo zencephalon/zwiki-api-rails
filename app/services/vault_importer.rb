@@ -4,6 +4,10 @@ class VaultImporter
   FRONTMATTER_REGEX = /\A---\n(.+?)\n---\n\n?/m
   WIKILINK_REGEX = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/
 
+  # Vault-level docs that are not knowledge nodes. Without this they get
+  # imported as nodes (named from their heading), duplicating real nodes.
+  IGNORED_BASENAMES = %w[CLAUDE.md README.md].freeze
+
   attr_reader :user, :input_dir
   attr_accessor :created_count, :updated_count, :skipped_count
 
@@ -13,30 +17,52 @@ class VaultImporter
     @created_count = 0
     @updated_count = 0
     @skipped_count = 0
+    @failed = []
     @filename_to_short_id = {}
   end
 
-  def import(mode: :sync)
+  def import(mode: :sync, only_files: nil)
     raise ArgumentError, "Directory does not exist: #{input_dir}" unless Dir.exist?(input_dir)
 
-    files = Dir.glob(File.join(input_dir, '*.md'))
+    all_files = Dir.glob(File.join(input_dir, '*.md'))
+                   .reject { |f| IGNORED_BASENAMES.include?(File.basename(f)) }
 
-    # First pass: build mapping of filenames to short_ids
-    build_filename_mapping(files)
+    # Load every node once so link resolution and per-file lookups are in-memory
+    # instead of one round trip to the database per file.
+    preload_nodes
 
-    # Second pass: import/sync files
-    files.each do |filepath|
-      import_file(filepath, mode: mode)
+    # First pass: build mapping of filenames to short_ids (needs all files so
+    # links from changed files can resolve to unchanged targets)
+    build_filename_mapping(all_files)
+
+    # Second pass: import/sync files (only the changed subset when given).
+    # A single malformed note must not abort the whole sync.
+    files_to_import = only_files || all_files
+    files_to_import = files_to_import.reject { |f| IGNORED_BASENAMES.include?(File.basename(f)) }
+    files_to_import.each do |filepath|
+      begin
+        import_file(filepath, mode: mode)
+      rescue StandardError => e
+        @failed << { file: File.basename(filepath), error: e.message }
+      end
     end
 
     {
       created: @created_count,
       updated: @updated_count,
-      skipped: @skipped_count
+      skipped: @skipped_count,
+      failed: @failed
     }
   end
 
   private
+
+  def preload_nodes
+    @nodes_by_short_id = {}
+    user.nodes.find_each do |node|
+      @nodes_by_short_id[node.short_id] = node
+    end
+  end
 
   def build_filename_mapping(files)
     files.each do |filepath|
@@ -49,8 +75,8 @@ class VaultImporter
       end
     end
 
-    # Also map existing user nodes by name
-    user.nodes.find_each do |node|
+    # Also map existing user nodes by name (from the preloaded set)
+    @nodes_by_short_id.each_value do |node|
       sanitized_name = sanitize_for_lookup(node.name)
       @filename_to_short_id[sanitized_name] ||= node.short_id
     end
@@ -71,10 +97,21 @@ class VaultImporter
     content = convert_wikilinks(content)
 
     if frontmatter && frontmatter['short_id']
-      sync_existing_node(frontmatter, content, filepath, mode: mode)
+      sync_existing_node(frontmatter, content, filepath, raw_content, mode: mode)
+    elsif (node = resolve_existing_by_filename(filename))
+      # No short_id in the file, but its name matches an existing node — update
+      # it rather than creating a duplicate on every sync, and stamp the file so
+      # future syncs match by short_id directly.
+      update_node(node, content, frontmatter || {})
+      write_short_id_back(filepath, node, raw_content)
     else
-      create_new_node(filename, frontmatter, content)
+      create_new_node(frontmatter, content, filepath, raw_content)
     end
+  end
+
+  def resolve_existing_by_filename(filename)
+    short_id = @filename_to_short_id[filename] || @filename_to_short_id[sanitize_for_lookup(filename)]
+    short_id && @nodes_by_short_id[short_id]
   end
 
   def extract_frontmatter(raw_content)
@@ -110,12 +147,12 @@ class VaultImporter
     result
   end
 
-  def sync_existing_node(frontmatter, content, filepath, mode:)
-    node = user.nodes.find_by(short_id: frontmatter['short_id'])
+  def sync_existing_node(frontmatter, content, filepath, raw_content, mode:)
+    node = @nodes_by_short_id[frontmatter['short_id']]
 
     unless node
-      # Node was deleted from database, create fresh
-      create_node_from_frontmatter(frontmatter, content)
+      # Node was deleted from database (or its short_id is stale); create fresh
+      create_node_from_frontmatter(frontmatter, content, filepath, raw_content)
       return
     end
 
@@ -143,7 +180,7 @@ class VaultImporter
     @updated_count += 1
   end
 
-  def create_new_node(filename, frontmatter, content)
+  def create_new_node(frontmatter, content, filepath, raw_content)
     node = user.nodes.new(content: content)
 
     if frontmatter
@@ -152,9 +189,10 @@ class VaultImporter
 
     node.save!
     @created_count += 1
+    write_short_id_back(filepath, node, raw_content)
   end
 
-  def create_node_from_frontmatter(frontmatter, content)
+  def create_node_from_frontmatter(frontmatter, content, filepath, raw_content)
     node = user.nodes.new(
       content: content,
       is_private: frontmatter.fetch('is_private', true)
@@ -167,5 +205,20 @@ class VaultImporter
     end
 
     @created_count += 1
+    write_short_id_back(filepath, node, raw_content)
+  end
+
+  # Stamp the file's frontmatter with the node's live short_id so the next sync
+  # matches it directly instead of re-creating it (handles new files and files
+  # whose recorded short_id no longer exists).
+  def write_short_id_back(filepath, node, raw_content)
+    return if raw_content.nil?
+
+    body = raw_content.sub(FRONTMATTER_REGEX, '')
+    frontmatter = +"---\nshort_id: #{node.short_id}\nis_private: #{node.is_private}\n---\n\n"
+    File.write(filepath, frontmatter + body, mode: 'w:UTF-8')
+  rescue StandardError
+    # Writing back is best-effort; a failure here must not fail the import.
+    nil
   end
 end

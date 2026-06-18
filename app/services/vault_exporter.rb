@@ -13,19 +13,28 @@ class VaultExporter
     @short_id_to_filename = {}
   end
 
-  def export(nodes: nil)
-    nodes ||= user.nodes
+  def export(nodes: nil, since: nil)
+    all_nodes = nodes || user.nodes
     FileUtils.mkdir_p(output_dir)
 
-    # First pass: build filename mapping
-    build_filename_mapping(nodes)
+    # First pass: build filename mapping over ALL nodes so links from exported
+    # files resolve to filenames of nodes that aren't being re-exported.
+    build_filename_mapping(all_nodes)
 
-    # Second pass: export files
-    iterate_nodes(nodes) do |node|
+    # Second pass: export only nodes changed since the last export (when given)
+    iterate_nodes(filter_since(all_nodes, since)) do |node|
       export_node(node)
     end
 
     @exported_count
+  end
+
+  # Canonical { short_id => filename (without .md) } for the given nodes.
+  # Filenames are derived from headings with short_id dedup for collisions.
+  def canonical_filename_map(nodes = nil)
+    @short_id_to_filename = {}
+    build_filename_mapping(nodes || user.nodes)
+    @short_id_to_filename
   end
 
   def export_node(node)
@@ -39,6 +48,16 @@ class VaultExporter
   end
 
   private
+
+  def filter_since(nodes, since)
+    return nodes if since.nil?
+
+    if nodes.respond_to?(:where)
+      nodes.where('updated_at > ?', since)
+    else
+      nodes.select { |node| node.updated_at && node.updated_at > since }
+    end
+  end
 
   def iterate_nodes(nodes, &block)
     if nodes.respond_to?(:find_each)
