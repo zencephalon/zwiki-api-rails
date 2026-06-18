@@ -1,11 +1,15 @@
 require 'short_id'
 require 'digest'
 require 'chronic'
+require 'securerandom'
 
 LINK_REGEX = /\[([^\[]+)\]\(([^)]+)\)/
 INCLUDE_REGEX = /\{([^{]+)\}\(([^)]+)\)/
 URL_SAFETY_REGEX = /[&$\+,:;=\?@#\s<>\[\]\{\}[\/]|\\\^%]+/
 PRIVACY_FOLD_REGEX = /₴.*₴/
+# Short_id alphabet characters that break acts-as-taggable's case-insensitive
+# lookup (locale-dependent case folding), corrupting any node linked from them.
+PROBLEMATIC_SHORT_ID_CHARS = %w[İ].freeze
 # DATE_REGEX matches format Fri Nov 25 2022
 DATE_REGEX = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}) (\d{4})/
 
@@ -56,8 +60,20 @@ class Node < ApplicationRecord
 
   def set_short_id
     unless self.short_id
-      self.short_id = ShortId.int_to_short_id(self.id)
+      candidate = ShortId.int_to_short_id(self.id)
+      # Some alphabet characters (Turkish dotted-I, İ) break acts-as-taggable's
+      # case-insensitive tag lookup, so any node linked from such a short_id
+      # fails to save. Fall back to a safe ASCII short_id in that case.
+      candidate = generate_safe_short_id if PROBLEMATIC_SHORT_ID_CHARS.any? { |c| candidate.include?(c) }
+      self.short_id = candidate
       self.save
+    end
+  end
+
+  def generate_safe_short_id
+    loop do
+      candidate = SecureRandom.alphanumeric(6)
+      return candidate unless Node.exists?(short_id: candidate)
     end
   end
 
