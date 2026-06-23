@@ -4,12 +4,15 @@ require 'yaml'
 class VaultExporter
   FILENAME_UNSAFE_REGEX = /[<>:"\/\\|?*\x00-\x1f]/
 
-  attr_reader :user, :output_dir, :exported_count
+  attr_reader :user, :output_dir, :exported_count, :created_files, :updated_files, :skipped_files
 
   def initialize(user, output_dir)
     @user = user
     @output_dir = output_dir
     @exported_count = 0
+    @created_files = []
+    @updated_files = []
+    @skipped_files = []
     @short_id_to_filename = {}
   end
 
@@ -43,7 +46,14 @@ class VaultExporter
 
     content = build_file_content(node)
 
+    existed = File.exist?(filepath)
+    if existed && File.read(filepath, mode: 'r:UTF-8') == content
+      @skipped_files << filename
+      return
+    end
+
     File.write(filepath, content, mode: 'w:UTF-8')
+    (existed ? @updated_files : @created_files) << filename
     @exported_count += 1
   end
 

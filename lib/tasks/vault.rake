@@ -35,6 +35,16 @@ module VaultSync
     File.write(state_file(dir), state.to_yaml)
   end
 
+  # Print a labeled, capped list of filenames so a pull shows *which* notes
+  # arrived rather than just a count.
+  def list_files(label, files, limit: 30)
+    return if files.empty?
+
+    puts "  #{label}:"
+    files.sort.first(limit).each { |f| puts "    #{f}" }
+    puts "    ...and #{files.size - limit} more" if files.size > limit
+  end
+
   def git_repo?(dir)
     system("git -C #{dir.shellescape} rev-parse --is-inside-work-tree",
            out: File::NULL, err: File::NULL)
@@ -138,7 +148,14 @@ namespace :vault do
     state['last_sync_at'] = Time.now.utc.iso8601
     VaultSync.save_state(dir, state)
 
-    puts "Exported #{count} node(s) to #{dir}"
+    created = exporter.created_files
+    updated = exporter.updated_files
+    puts "Pulled #{count} node(s) from server into #{dir}:"
+    puts "  Created: #{created.size}"
+    puts "  Updated: #{updated.size}"
+    puts "  Skipped: #{exporter.skipped_files.size}" if exporter.skipped_files.any?
+    VaultSync.list_files('New', created)
+    VaultSync.list_files('Updated', updated)
   end
 
   desc "Sync nodes for User.find(1) from ~/zwiki (incremental: changed files only)"
