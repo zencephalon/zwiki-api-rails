@@ -10,6 +10,8 @@ Rails.application.routes.draw do
   post 'nodes/:id/append', to: 'nodes#append'
   post 'nodes/:id/magic_append', to: 'nodes#magic_append'
 
+  post 'agent', to: 'agent#create'
+
   # User routes - scoped to current user only (no index or show by id)
   post 'users', to: 'users#create'
   get 'users/me', to: 'users#me'

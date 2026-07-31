@@ -1,5 +1,8 @@
 source 'https://rubygems.org'
 
+# Read by the buildpack to pick the production Ruby. Keep in sync with .tool-versions.
+ruby '3.3.11'
+
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 6.1.7'
@@ -40,7 +43,7 @@ gem 'rest-client'
 gem 'whenever'
 gem 'json'
 gem 'chronic'
-gem 'anthropic'
+gem 'anthropic', '~> 1.59', require: false
 
 gem 'acts-as-taggable-on', '~> 8.0'
 

@@ -33,23 +33,21 @@ class NodesController < ApplicationController
       "# #{node.name}\n#{node.content}"
     end.join("\n\n---\n\n")
     
-    client = Anthropic::Client.new(access_token: ENV['ANTHROPIC_API_KEY'])
-    
+    client = ZwikiAgent.build_client
+
     system_prompt = "You are a knowledge summarizer. Given multiple documents or notes, create a comprehensive yet concise summary that captures the key information, relationships, and insights across all the provided content. Focus on factual information and clear connections between ideas. Return the summary without an introduction."
-    
-    response = client.messages(
-      parameters: {
-        model: "claude-3-5-sonnet-20241022",
-        system: system_prompt,
-        messages: [
-          { role: "user", content: "Please summarize the following content:\n\n#{content_to_summarize}" }
-        ],
-        max_tokens: 2000
-      }
+
+    response = client.messages.create(
+      model: "claude-opus-5",
+      system_: system_prompt,
+      messages: [
+        { role: "user", content: "Please summarize the following content:\n\n#{content_to_summarize}" }
+      ],
+      max_tokens: 4000
     )
 
-    summary = response["content"].first["text"]
-    
+    summary = response.content.select { |block| block.type == :text }.map(&:text).join("\n").strip
+
     render json: {
       summary: summary,
       nodes: nodes.map { |node| NodeShortSerializer.new(node) }
@@ -142,24 +140,23 @@ class NodesController < ApplicationController
 
     text = magic_append_params[:text]
     
-    client = Anthropic::Client.new(access_token: ENV['ANTHROPIC_API_KEY'])
-    
+    client = ZwikiAgent.build_client
+
     system_prompt = "You assist the user's personal knowledge management system. You'll be given a new journal entry and an existing knowledge entry. Update it to reflect the new information. Always include events that occurred. Filter extraneous information. Don't elaborate or extrapolate. Keep the pre-existing content intact unless it needs modification to reflect the new information. Return only the updated Markdown."
     
     message = "#{text}\n\n============================\n\n#{@node.content}"
     
-    response = client.messages(
-      parameters: {
-        model: "claude-3-5-sonnet-20241022",
-        system: system_prompt,
-        messages: [
-          { role: "user", content: message }
-        ],
-        max_tokens: 2000
-      }
+    response = client.messages.create(
+      model: "claude-opus-5",
+      system_: system_prompt,
+      messages: [
+        { role: "user", content: message }
+      ],
+      max_tokens: 8000
     )
 
-    ai_response = response["content"].first["text"]
+    ai_response = response.content.select { |block| block.type == :text }.map(&:text).join("\n").strip
+    ai_response = nil if ai_response.empty?
 
     if ai_response
       @node.content = ai_response
