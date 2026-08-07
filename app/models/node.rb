@@ -10,6 +10,7 @@ PRIVACY_FOLD_REGEX = /₴.*₴/
 # Short_id alphabet characters that break acts-as-taggable's case-insensitive
 # lookup (locale-dependent case folding), corrupting any node linked from them.
 PROBLEMATIC_SHORT_ID_CHARS = %w[İ].freeze
+GLOSSARY_SUFFIX = 'Glossary'.freeze
 # DATE_REGEX matches format Fri Nov 25 2022
 DATE_REGEX = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}) (\d{4})/
 
@@ -52,6 +53,13 @@ class Node < ApplicationRecord
 
   def is_day_entry
     self.name.match(DATE_REGEX)
+  end
+
+  # Zencephalon auto-links terms defined by any node named "… Glossary".
+  # Privacy stays out of it, so turning a public glossary private still
+  # clears the terms it used to publish.
+  def is_glossary?
+    self.name.to_s.strip.end_with?(GLOSSARY_SUFFIX)
   end
 
   def word_count
@@ -246,25 +254,34 @@ class Node < ApplicationRecord
   def revalidate_cache
     return if ENV['REVALIDATION_TOKEN'].blank?
 
-    slugs_to_revalidate = []
-    slugs_to_revalidate << self.slug if self.slug.present?
+    if is_glossary?
+      # Glossary terms link from anywhere, so an edit changes every page.
+      payloads = [{ all: true }]
+      description = "every page (glossary edit)"
+    else
+      slugs_to_revalidate = []
+      slugs_to_revalidate << self.slug if self.slug.present?
 
-    collect_affected_nodes.each do |node|
-      slugs_to_revalidate << node.slug if node.slug.present?
+      collect_affected_nodes.each do |node|
+        slugs_to_revalidate << node.slug if node.slug.present?
+      end
+
+      payloads = slugs_to_revalidate.map { |slug| { slug: slug } }
+      description = "#{slugs_to_revalidate.length} nodes: #{slugs_to_revalidate.join(', ')}"
     end
 
-    return if slugs_to_revalidate.empty?
+    return if payloads.empty?
 
-    Rails.logger.info "Revalidating cache for #{slugs_to_revalidate.length} nodes: #{slugs_to_revalidate.join(', ')}"
+    Rails.logger.info "Revalidating cache for #{description}"
 
     Thread.new do
-      threads = slugs_to_revalidate.map do |slug|
+      threads = payloads.map do |payload|
         Thread.new do
           begin
             RestClient::Request.execute(
               method: :post,
               url: "https://www.zencephalon.com/api/revalidate",
-              payload: { slug: slug }.to_json,
+              payload: payload.to_json,
               headers: {
                 content_type: :json,
                 accept: :json,
@@ -273,9 +290,9 @@ class Node < ApplicationRecord
               max_redirects: 3,
               timeout: 10
             )
-            Rails.logger.info "Cache revalidation succeeded for #{slug}"
+            Rails.logger.info "Cache revalidation succeeded for #{payload}"
           rescue => e
-            Rails.logger.warn "Cache revalidation failed for #{slug}: #{e.message}"
+            Rails.logger.warn "Cache revalidation failed for #{payload}: #{e.message}"
           end
         end
       end
