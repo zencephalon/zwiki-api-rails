@@ -18,6 +18,7 @@ class VaultImporter
     @updated_count = 0
     @skipped_count = 0
     @failed = []
+    @conflicts = []
     @filename_to_short_id = {}
   end
 
@@ -51,7 +52,8 @@ class VaultImporter
       created: @created_count,
       updated: @updated_count,
       skipped: @skipped_count,
-      failed: @failed
+      failed: @failed,
+      conflicts: @conflicts
     }
   end
 
@@ -175,9 +177,37 @@ class VaultImporter
       return
     end
 
+    if server_moved_ahead?(node, frontmatter)
+      @conflicts << {
+        file: "#{node.name}.md",
+        short_id: node.short_id,
+        base_version: frontmatter['version'],
+        server_version: current_server_version(node)
+      }
+      @skipped_count += 1
+      return
+    end
+
     node.version += 1
     node.save!
     @updated_count += 1
+  end
+
+  # The exporter stamps into each file the version it was pulled at. A server
+  # version beyond that means the node changed elsewhere (the Zwiki client)
+  # after this file was written, so pushing the file would destroy that work.
+  #
+  # Read the version straight from the database rather than the preloaded copy,
+  # which may have gone stale while earlier files in this run were importing.
+  def server_moved_ahead?(node, frontmatter)
+    base_version = frontmatter['version']
+    return false if base_version.nil?
+
+    current_server_version(node) > base_version.to_i
+  end
+
+  def current_server_version(node)
+    Node.where(id: node.id).pick(:version) || node.version
   end
 
   def create_new_node(frontmatter, content, filepath, raw_content)
@@ -211,11 +241,16 @@ class VaultImporter
   # Stamp the file's frontmatter with the node's live short_id so the next sync
   # matches it directly instead of re-creating it (handles new files and files
   # whose recorded short_id no longer exists).
+  #
+  # `version` has to travel with it: without a recorded base version the
+  # conflict guard in #update_node has nothing to compare against and would let
+  # a later stale push overwrite the server.
   def write_short_id_back(filepath, node, raw_content)
     return if raw_content.nil?
 
     body = raw_content.sub(FRONTMATTER_REGEX, '')
-    frontmatter = +"---\nshort_id: #{node.short_id}\nis_private: #{node.is_private}\n---\n\n"
+    frontmatter = +"---\nshort_id: #{node.short_id}\n" \
+                   "is_private: #{node.is_private}\nversion: #{node.version}\n---\n\n"
     File.write(filepath, frontmatter + body, mode: 'w:UTF-8')
   rescue StandardError
     # Writing back is best-effort; a failure here must not fail the import.

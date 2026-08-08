@@ -190,6 +190,20 @@ namespace :vault do
       puts "  Failed:  #{failed.length}"
       failed.each { |f| puts "    - #{f[:file]}: #{f[:error]}" }
     end
+
+    conflicts = result[:conflicts] || []
+    if conflicts.any?
+      puts
+      puts "!! #{conflicts.length} file(s) NOT pushed - the server is newer:"
+      conflicts.each do |c|
+        puts "     #{c[:file]} (local base v#{c[:base_version]}, server v#{c[:server_version]})"
+      end
+      puts
+      puts "   These notes changed in Zwiki after the local file was exported."
+      puts "   Pushing them would have destroyed that work, so nothing was written."
+      puts "   Run `rake vault:export` to pull the server copy down, or copy your"
+      puts "   local edits somewhere safe first if you want to keep both."
+    end
   end
 
   desc "Rebuild :links/:inclusions tag graph under strict_case_match (one-time)"

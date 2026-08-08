@@ -63,6 +63,55 @@ RSpec.describe VaultImporter do
       expect(node.content).to include('New content')
     end
 
+    it 'refuses to push a stale file over a node edited on the server' do
+      # The exact loss: exported at v3, rewritten in the Zwiki client (v9),
+      # then a sync tries to push the stale local file back up.
+      node = user.nodes.create!(content: "# Glossary\n\nTori\nUke\n")
+      node.update!(version: 3)
+      write_markdown_file('Glossary', "# Glossary\n\nTori\nUke\n", {
+        'short_id' => node.short_id,
+        'version' => 3
+      })
+
+      node.update!(content: "# Glossary\n\nTori: the one who applies.\n", version: 9)
+
+      importer = VaultImporter.new(user, import_dir)
+      result = importer.import(mode: :sync)
+
+      expect(result[:updated]).to eq(0)
+      expect(result[:conflicts].length).to eq(1)
+      expect(result[:conflicts].first).to include(base_version: 3, server_version: 9)
+      expect(node.reload.content).to include('the one who applies')
+    end
+
+    it 'pushes local edits when the file is based on the current version' do
+      node = user.nodes.create!(content: "# Note\n\nOld")
+      node.update!(version: 4)
+
+      write_markdown_file('Note', "# Note\n\nEdited locally", {
+        'short_id' => node.short_id,
+        'version' => 4
+      })
+
+      importer = VaultImporter.new(user, import_dir)
+      result = importer.import(mode: :sync)
+
+      expect(result[:conflicts]).to be_empty
+      expect(result[:updated]).to eq(1)
+      expect(node.reload.content).to include('Edited locally')
+      expect(node.version).to eq(5)
+    end
+
+    it 'records a version in frontmatter it stamps back, so the guard stays armed' do
+      write_markdown_file('Fresh Note', "# Fresh Note\n\nBody")
+
+      VaultImporter.new(user, import_dir).import(mode: :sync)
+
+      written = File.read(File.join(import_dir, 'Fresh Note.md'))
+      node = user.nodes.find_by(name: 'Fresh Note')
+      expect(written).to match(/^version: #{node.version}$/)
+    end
+
     it 'skips nodes when content is unchanged in sync mode' do
       node = user.nodes.create!(content: "# Existing\n\nSame content")
 
