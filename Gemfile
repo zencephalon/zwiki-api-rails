@@ -20,6 +20,12 @@ gem 'puma', '6.4.0'
 # Use ActiveModel has_secure_password
 gem 'bcrypt', '~> 3.1.7'
 
+# Bundled (no longer default) gems in Ruby 3.4+ that activesupport 6.1 and
+# factory_bot 6.2 load without declaring.
+gem 'bigdecimal'
+gem 'mutex_m'
+gem 'observer'
+
 gem 'net-smtp'
 gem 'net-pop'
 gem 'net-imap'
