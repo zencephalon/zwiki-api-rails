@@ -19,14 +19,14 @@ rails db:migrate
 ```bash
 bundle exec rspec                    # Run all tests
 bundle exec rspec spec/models/       # Run model tests
-bundle exec rspec spec/controllers/  # Run controller tests
 bundle exec rspec spec/requests/     # Run request tests
+bundle exec rspec spec/services/     # Run service tests (agent, vault)
 bundle exec rspec spec/path/to/file_spec.rb  # Run specific test file
 ```
 
 ### Development Server
 ```bash
-rails server  # Start development server on port 3000
+rails server -p 8000  # zwiki's dev API_BASE expects localhost:8000 (puma defaults to 3000)
 ```
 
 ### Database
@@ -38,6 +38,13 @@ rails db:migrate          # Run pending migrations
 rails db:rollback         # Rollback last migration
 rails console             # Rails console for debugging
 ```
+
+### Vault (Obsidian) sync
+```bash
+bundle exec rake vault:export   # all nodes for user 1 → ~/zwiki as markdown with frontmatter
+bundle exec rake vault:sync     # import files newer than their DB record
+```
+Details in `docs/vault-sync.md`.
 
 ## Core Architecture
 
@@ -75,26 +82,29 @@ rails console             # Rails console for debugging
 - `GET /nodes/full_search_with_summary` - Search with AI-generated summary
 - `POST /nodes/:id/append` - Append text to existing node
 - `POST /nodes/:id/magic_append` - AI-assisted content merging
-- `GET /public/node/:slug` - Public node access
-- `GET /public/index` - List all public node slugs
-- `GET /public/root` - Get public root node
-- Authentication via `Authorization` header containing API key
+- `POST /agent` - Natural-language query over the user's nodes; server-side Claude tool loop, synchronous, may write (see `docs/agent-api.md`)
+- `GET /public/node/:slug`, `GET /public/index`, `GET /public/site_index`, `GET /public/root` - Public access, consumed by zencephalon.com
+- `POST /login` (`name` + `password`, not email) → `full_access` token, 6-month expiry
+- `GET /tokens`, `POST /tokens/read_only`, `DELETE /tokens/:id` - Token management; `read_only` tokens cannot write nodes or use agent write tools
+- `GET|PATCH|DELETE /users/me` - Current user only
+- Authentication via `Authorization` header containing the **raw token, no `Bearer` prefix**
 
 ### External Integrations
 
-- **Anthropic Claude API**: Powers search summaries and magic append features
+- **Anthropic Claude API**: Powers search summaries, magic append, and the `/agent` tool loop (`app/services/zwiki_agent.rb`)
+- **zencephalon.com**: `Node#after_save` POSTs `{slug}` to `https://www.zencephalon.com/api/revalidate` with `Bearer $REVALIDATION_TOKEN`; skipped when the env var is blank, so local edits never touch prod
 - **PostgreSQL**: Primary database with full-text search
 - **pg_search**: Full-text search with highlighting and ranking
 
 ### Environment Variables
 
 - `ANTHROPIC_API_KEY`: Required for AI features (search summaries, magic append)
-- `REVALIDATION_TOKEN`: Optional, for cache revalidation with frontend
+- `REVALIDATION_TOKEN`: Optional; enables the zencephalon revalidation hook above
 - Database credentials in `config/database.yml`
 
 ## Testing Patterns
 
 - Uses RSpec with FactoryBot for test data
-- Test files organized by type: models, controllers, requests, routing
+- Test files organized by type: models, requests, routing, services
 - Transactional fixtures enabled for clean test isolation
 - API testing via request specs, not controller specs for newer endpoints
