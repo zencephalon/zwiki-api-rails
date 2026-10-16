@@ -152,12 +152,22 @@ class Node < ApplicationRecord
     end
   end
 
+  def fill_default_content
+    return if self.content
+
+    self.content = "# #{self.name}\n\n"
+    if is_day_entry
+      day_template = self.user.nodes.find_by(name: '__journal_template__')
+      self.content += day_template.content_without_title if day_template
+    end
+  end
+
   def content_without_title
     self.content.start_with?('#') ? self.content.lines[1..-1].join.strip : self.content
   end
 
   def append(text)
-    unless self.content.match(text)
+    unless self.content.include?(text)
       self.content = "#{self.content}#{text}"
       self.version += 1
     end

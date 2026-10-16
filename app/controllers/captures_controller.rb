@@ -1,19 +1,48 @@
 class CapturesController < ApplicationController
-  # Temporary probe: logs whatever the Repebble webhook sends so we can learn
-  # its payload and signature format before building real routing.
+  # Voice memos from the Repebble Index ring, posted by the phone app as
+  # multipart form data. The app's HMAC signing scheme stays undocumented, so a
+  # shared token in a custom header authenticates instead.
   skip_before_action :authenticate
-
-  MAX_BODY_LOG = 10_000
+  before_action :verify_capture_token
 
   def create
-    headers = request.headers.env
-      .select { |k, _| k.start_with?('HTTP_') || %w[CONTENT_TYPE CONTENT_LENGTH].include?(k) }
-      .transform_keys { |k| k.delete_prefix('HTTP_') }
-    body = request.raw_post.to_s
+    if params[:test] == 'true'
+      render json: { ok: true, test: true }
+      return
+    end
 
-    Rails.logger.info("[capture] headers=#{headers.to_json}")
-    Rails.logger.info("[capture] body(#{body.bytesize}b)=#{body.byteslice(0, MAX_BODY_LOG)}")
+    delivery = request.headers['X-Index-Delivery']
+    if delivery.present? && Rails.cache.exist?(delivery_key(delivery))
+      render json: { ok: true, duplicate: true }
+      return
+    end
 
-    head :ok
+    result = CaptureProcessor.new(user: capture_user).process(params[:transcription], at: recorded_at)
+    Rails.cache.write(delivery_key(delivery), true, expires_in: 1.day) if delivery.present?
+
+    render json: { ok: true, journal: result.journal, tasks: result.tasks.map { |t| t[:title] } }
+  end
+
+  private
+
+  def verify_capture_token
+    expected = ENV['CAPTURE_SECRET'].to_s
+    given = request.headers['X-Capture-Token'].to_s
+    return if expected.present? && ActiveSupport::SecurityUtils.secure_compare(given, expected)
+
+    render json: { error: 'Bad capture token' }, status: :unauthorized
+  end
+
+  def capture_user
+    User.find(ENV.fetch('CAPTURE_USER_ID', 1))
+  end
+
+  def recorded_at
+    ms = params[:recordedAt].to_i
+    ms.positive? ? Time.zone.at(ms / 1000.0) : Time.current
+  end
+
+  def delivery_key(delivery)
+    "capture-delivery:#{delivery}"
   end
 end
