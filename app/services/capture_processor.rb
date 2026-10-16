@@ -22,7 +22,7 @@ class CaptureProcessor
     name = now.strftime('%a %b %d %Y')
     node = @user.nodes.find_by(name: name) || @user.nodes.new(name: name).tap(&:fill_default_content)
 
-    node.content = "#{node.content.rstrip}\n\n**#{now.strftime('%H:%M')}** #{text}\n"
+    node.content = "#{node.content.rstrip}\n\n#{now.strftime('%-I:%M:%S %p')} 🎤: #{text}\n"
     node.version += 1
     node.save!
   end

@@ -28,7 +28,7 @@ RSpec.describe CaptureProcessor do
     end
 
     node = user.nodes.find_by!(name: 'Fri Oct 16 2026')
-    expect(node.content).to eq("# Fri Oct 16 2026\n\n## Gratitude\n\n**21:14** Walked the dog.\n")
+    expect(node.content).to eq("# Fri Oct 16 2026\n\n## Gratitude\n\n9:14:00 PM 🎤: Walked the dog.\n")
   end
 
   it "appends to an existing journal node and bumps its version" do
@@ -40,7 +40,7 @@ RSpec.describe CaptureProcessor do
     end
 
     node.reload
-    expect(node.content).to eq("# Fri Oct 16 2026\n\nMorning notes.\n\n**09:05** Coffee (oat milk)?\n")
+    expect(node.content).to eq("# Fri Oct 16 2026\n\nMorning notes.\n\n9:05:00 AM 🎤: Coffee (oat milk)?\n")
     expect(node.version).to eq(version + 1)
   end
 
