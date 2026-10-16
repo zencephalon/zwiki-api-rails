@@ -7,7 +7,7 @@ require 'json'
 class CaptureRouter
   MODEL = 'claude-opus-5-5'.freeze
 
-  TASK_PREFIX = /\A\s*(?:task|todo|to-do)\b[\s:,.\-]*/i
+  TASK_PREFIX = /\A\s*(?:task|to[- ]?do)\b[\s:,.\-]*/i
   JOURNAL_PREFIX = /\A\s*journal\b[\s:,.\-]*/i
 
   SYSTEM_PROMPT = <<~PROMPT.freeze

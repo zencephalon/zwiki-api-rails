@@ -17,6 +17,12 @@ RSpec.describe CaptureRouter do
     expect(result.journal).to be_nil
   end
 
+  ["Todo: buy AA batteries", "To do, buy AA batteries", "To-do. buy AA batteries"].each do |memo|
+    it "treats #{memo.inspect} as a task" do
+      expect(described_class.new(client: double).route(memo).tasks).to eq([{ title: "buy AA batteries", notes: nil }])
+    end
+  end
+
   it "routes a spoken journal prefix straight to the journal" do
     result = described_class.new(client: double).route("Journal, walked the dog at dusk.")
 

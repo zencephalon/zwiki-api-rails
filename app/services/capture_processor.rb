@@ -8,6 +8,7 @@ class CaptureProcessor
 
   def process(text, at: Time.current)
     result = @router.route(text)
+    Rails.logger.info("[capture] routed journal=#{result.journal.present?} tasks=#{result.tasks.map { |t| t[:title] }.to_json}")
     append_to_journal(result.journal, at) if result.journal.present?
     result.tasks.each { |task| ThingsMailer.task(task[:title], task[:notes]).deliver_now }
     result
