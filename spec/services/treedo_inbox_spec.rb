@@ -16,10 +16,10 @@ RSpec.describe TreedoInbox do
   it "posts the task as JSON with the bearer token" do
     allow(Net::HTTP).to receive(:post).and_return(response(Net::HTTPCreated, '201', '{"id":"abc"}'))
 
-    expect(described_class.new.add("Call mom", "Sunday")).to eq('id' => 'abc')
+    expect(described_class.new.add("Call mom", "Sunday", today: true)).to eq('id' => 'abc')
     expect(Net::HTTP).to have_received(:post).with(
       TreedoInbox::URL,
-      { title: "Call mom", notes: "Sunday" }.to_json,
+      { title: "Call mom", notes: "Sunday", today: true }.to_json,
       hash_including('Authorization' => 'Bearer treedo_test', 'Content-Type' => 'application/json')
     )
   end

@@ -36,10 +36,10 @@ RSpec.describe CaptureProcessor do
   end
 
   it "files each task in the treedo inbox" do
-    tasks = [{ title: "Buy batteries", notes: "AA for the remote" }, { title: "Call mom", notes: nil }]
+    tasks = [{ title: "Buy batteries", notes: "AA for the remote", today: false }, { title: "Call mom", notes: nil, today: true }]
     described_class.new(user: user, router: router_returning(tasks: tasks), inbox: inbox).process("x")
 
-    expect(inbox).to have_received(:add).with("Buy batteries", "AA for the remote").ordered
-    expect(inbox).to have_received(:add).with("Call mom", nil).ordered
+    expect(inbox).to have_received(:add).with("Buy batteries", "AA for the remote", today: false).ordered
+    expect(inbox).to have_received(:add).with("Call mom", nil, today: true).ordered
   end
 end

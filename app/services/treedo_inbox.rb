@@ -8,10 +8,11 @@ class TreedoInbox
 
   class Error < StandardError; end
 
-  def add(title, notes = nil)
+  # `today` also sets the task's *when* to today, so it shows on Today and comes up as a card.
+  def add(title, notes = nil, today: false)
     response = Net::HTTP.post(
       URL,
-      { title: title, notes: notes }.to_json,
+      { title: title, notes: notes, today: today }.to_json,
       'Content-Type' => 'application/json',
       'Authorization' => "Bearer #{ENV.fetch('TREEDO_TOKEN')}"
     )

@@ -1,13 +1,14 @@
 require 'json'
 
 # Splits a voice-memo transcript into a journal fragment and treedo inbox tasks.
-# A spoken "task …" or "journal …" prefix decides outright; otherwise Claude
-# classifies. Any classifier failure sends the raw text to the inbox, since a
+# A spoken "task …" or "journal …" prefix decides outright ("task today …"
+# also puts it on today); otherwise Claude classifies. Any classifier failure sends the raw text to the inbox, since a
 # stray inbox item costs one swipe while a task buried in the journal gets lost.
 class CaptureRouter
   MODEL = 'claude-opus-5-5'.freeze
 
   TASK_PREFIX = /\A\s*(?:task|to[- ]?do)\b[\s:,.\-]*/i
+  TODAY_PREFIX = /\A(?:for\s+)?today\b[\s:,.\-]*/i
   JOURNAL_PREFIX = /\A\s*journal\b[\s:,.\-]*/i
 
   SYSTEM_PROMPT = <<~PROMPT.freeze
@@ -18,6 +19,8 @@ class CaptureRouter
       Keep the speaker's own words; fix only obvious transcription slips.
     - tasks: concrete actions the speaker intends to take later. Give each a short
       imperative title; put any useful context (who, where, when, why) in notes.
+      Set today to true only when the speaker means to do it today ("today",
+      "this afternoon", "tonight", "before I leave work"); otherwise false.
 
     One memo may feed both. Use an empty string for journal when nothing belongs
     there, and an empty list for tasks when nothing does. When a fragment could go
@@ -34,9 +37,10 @@ class CaptureRouter
           type: 'object',
           properties: {
             title: { type: 'string' },
-            notes: { type: 'string' }
+            notes: { type: 'string' },
+            today: { type: 'boolean' }
           },
-          required: %w[title notes],
+          required: %w[title notes today],
           additionalProperties: false
         }
       }
@@ -56,7 +60,9 @@ class CaptureRouter
     return Result.new(journal: nil, tasks: []) if text.empty?
 
     if (match = text.match(TASK_PREFIX))
-      Result.new(journal: nil, tasks: [{ title: match.post_match.strip, notes: nil }])
+      day = match.post_match.match(TODAY_PREFIX)
+      title = (day ? day.post_match : match.post_match).strip
+      Result.new(journal: nil, tasks: [{ title: title, notes: nil, today: !day.nil? }])
     elsif (match = text.match(JOURNAL_PREFIX))
       Result.new(journal: match.post_match.strip, tasks: [])
     else
@@ -77,7 +83,7 @@ class CaptureRouter
     return fallback(text) unless message.stop_reason == :end_turn
 
     data = JSON.parse(message.content.select { |b| b.type == :text }.map(&:text).join)
-    tasks = data['tasks'].map { |t| { title: t['title'], notes: t['notes'].presence } }
+    tasks = data['tasks'].map { |t| { title: t['title'], notes: t['notes'].presence, today: t['today'] == true } }
     Result.new(journal: data['journal'].presence, tasks: tasks)
   rescue Anthropic::Errors::Error, JSON::ParserError => e
     Rails.logger.warn("[capture] classifier failed, sending to the inbox: #{e.class}: #{e.message}")
@@ -85,7 +91,7 @@ class CaptureRouter
   end
 
   def fallback(text)
-    Result.new(journal: nil, tasks: [{ title: text, notes: nil }])
+    Result.new(journal: nil, tasks: [{ title: text, notes: nil, today: false }])
   end
 
   def client

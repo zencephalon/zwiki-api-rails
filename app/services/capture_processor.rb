@@ -11,7 +11,7 @@ class CaptureProcessor
     result = @router.route(text)
     Rails.logger.info("[capture] routed journal=#{result.journal.present?} tasks=#{result.tasks.map { |t| t[:title] }.to_json}")
     append_to_journal(result.journal, at) if result.journal.present?
-    result.tasks.each { |task| @inbox.add(task[:title], task[:notes]) }
+    result.tasks.each { |task| @inbox.add(task[:title], task[:notes], today: task[:today]) }
     result
   end
 
