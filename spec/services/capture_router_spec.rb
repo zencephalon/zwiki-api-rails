@@ -9,7 +9,7 @@ RSpec.describe CaptureRouter do
     client
   end
 
-  it "routes a spoken task prefix straight to Things without calling Claude" do
+  it "routes a spoken task prefix straight to the inbox without calling Claude" do
     client = double
     result = described_class.new(client: client).route("Task: buy AA batteries")
 
@@ -38,14 +38,14 @@ RSpec.describe CaptureRouter do
     expect(result.tasks).to eq([{ title: "Buy batteries", notes: nil }])
   end
 
-  it "falls back to a Things task when the classifier refuses" do
+  it "falls back to an inbox task when the classifier refuses" do
     result = described_class.new(client: client_returning("", stop_reason: :refusal)).route("something odd")
 
     expect(result.tasks).to eq([{ title: "something odd", notes: nil }])
     expect(result.journal).to be_nil
   end
 
-  it "falls back to a Things task when the classifier returns bad JSON" do
+  it "falls back to an inbox task when the classifier returns bad JSON" do
     result = described_class.new(client: client_returning("not json")).route("something odd")
 
     expect(result.tasks).to eq([{ title: "something odd", notes: nil }])

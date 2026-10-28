@@ -1,8 +1,8 @@
 require 'json'
 
-# Splits a voice-memo transcript into a journal fragment and Things tasks.
+# Splits a voice-memo transcript into a journal fragment and treedo inbox tasks.
 # A spoken "task …" or "journal …" prefix decides outright; otherwise Claude
-# classifies. Any classifier failure sends the raw text to Things, since a
+# classifies. Any classifier failure sends the raw text to the inbox, since a
 # stray inbox item costs one swipe while a task buried in the journal gets lost.
 class CaptureRouter
   MODEL = 'claude-opus-5-5'.freeze
@@ -80,7 +80,7 @@ class CaptureRouter
     tasks = data['tasks'].map { |t| { title: t['title'], notes: t['notes'].presence } }
     Result.new(journal: data['journal'].presence, tasks: tasks)
   rescue Anthropic::Errors::Error, JSON::ParserError => e
-    Rails.logger.warn("[capture] classifier failed, sending to Things: #{e.class}: #{e.message}")
+    Rails.logger.warn("[capture] classifier failed, sending to the inbox: #{e.class}: #{e.message}")
     fallback(text)
   end
 

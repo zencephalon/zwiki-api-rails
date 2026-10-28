@@ -9,22 +9,13 @@ RSpec.describe CaptureProcessor do
     instance_double(CaptureRouter, route: CaptureRouter::Result.new(journal: journal, tasks: tasks))
   end
 
-  around do |example|
-    original = ENV.to_h.slice('THINGS_EMAIL', 'GMAIL_USERNAME')
-    ENV['THINGS_EMAIL'] = 'inbox@things.example'
-    ENV['GMAIL_USERNAME'] = 'me@example.com'
-    example.run
-  ensure
-    %w[THINGS_EMAIL GMAIL_USERNAME].each { |k| original.key?(k) ? ENV[k] = original[k] : ENV.delete(k) }
-  end
-
-  before { ActionMailer::Base.deliveries.clear }
+  let(:inbox) { instance_double(TreedoInbox, add: { 'id' => 'x' }) }
 
   it "creates today's journal node with the template and appends a timestamped entry" do
     user.nodes.create!(content: "# __journal_template__\n\n## Gratitude")
 
     travel_to Time.zone.parse('2026-10-16 21:14 -04:00') do
-      described_class.new(user: user, router: router_returning(journal: "Walked the dog.")).process("x")
+      described_class.new(user: user, router: router_returning(journal: "Walked the dog."), inbox: inbox).process("x")
     end
 
     node = user.nodes.find_by!(name: 'Fri Oct 16 2026')
@@ -36,7 +27,7 @@ RSpec.describe CaptureProcessor do
     version = node.reload.version
 
     travel_to Time.zone.parse('2026-10-16 09:05 -04:00') do
-      described_class.new(user: user, router: router_returning(journal: "Coffee (oat milk)?")).process("x")
+      described_class.new(user: user, router: router_returning(journal: "Coffee (oat milk)?"), inbox: inbox).process("x")
     end
 
     node.reload
@@ -44,13 +35,11 @@ RSpec.describe CaptureProcessor do
     expect(node.version).to eq(version + 1)
   end
 
-  it "mails each task to Things" do
+  it "files each task in the treedo inbox" do
     tasks = [{ title: "Buy batteries", notes: "AA for the remote" }, { title: "Call mom", notes: nil }]
-    described_class.new(user: user, router: router_returning(tasks: tasks)).process("x")
+    described_class.new(user: user, router: router_returning(tasks: tasks), inbox: inbox).process("x")
 
-    mails = ActionMailer::Base.deliveries
-    expect(mails.map(&:subject)).to eq(["Buy batteries", "Call mom"])
-    expect(mails.first.to).to eq(['inbox@things.example'])
-    expect(mails.first.body.to_s).to eq("AA for the remote")
+    expect(inbox).to have_received(:add).with("Buy batteries", "AA for the remote").ordered
+    expect(inbox).to have_received(:add).with("Call mom", nil).ordered
   end
 end

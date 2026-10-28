@@ -1,16 +1,17 @@
 class CaptureProcessor
   TIME_ZONE = ENV.fetch('CAPTURE_TIME_ZONE', 'America/New_York')
 
-  def initialize(user:, router: CaptureRouter.new)
+  def initialize(user:, router: CaptureRouter.new, inbox: TreedoInbox.new)
     @user = user
     @router = router
+    @inbox = inbox
   end
 
   def process(text, at: Time.current)
     result = @router.route(text)
     Rails.logger.info("[capture] routed journal=#{result.journal.present?} tasks=#{result.tasks.map { |t| t[:title] }.to_json}")
     append_to_journal(result.journal, at) if result.journal.present?
-    result.tasks.each { |task| ThingsMailer.task(task[:title], task[:notes]).deliver_now }
+    result.tasks.each { |task| @inbox.add(task[:title], task[:notes]) }
     result
   end
 
