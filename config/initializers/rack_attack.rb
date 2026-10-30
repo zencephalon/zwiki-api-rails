@@ -9,7 +9,14 @@ class Rack::Attack
 #    '127.0.0.1' == req.ip || '::1' == req.ip
 #  end
 
-  # Allow an IP address to make 5 requests every 5 seconds
+  # zencephalon's build renders ~17 pages/s from one IP. A throttled fetch there
+  # used to get cached as a permanent 404, so authenticated callers skip the limit.
+  safelist('authenticated') do |req|
+    token = req.get_header('HTTP_AUTHORIZATION')
+    token.present? && (ApiToken.active.exists?(token: token) || User.exists?(api_key: token))
+  end
+
+  # Allow an IP address to make 20 requests every 5 seconds
   throttle('req/ip', limit: 20, period: 5) do |req|
     req.ip
   end
