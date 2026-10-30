@@ -3,7 +3,15 @@ require 'rails_helper'
 RSpec.describe "Rate limiting", type: :request do
   let(:user) { FactoryBot.create(:user, password: "password123", password_confirmation: "password123") }
 
-  before { Rack::Attack.reset! }
+  include ActiveSupport::Testing::TimeHelpers
+
+  # Rack::Attack counts in fixed 5s buckets; a burst straddling two never trips.
+  before do
+    Rack::Attack.reset!
+    freeze_time
+  end
+
+  after { travel_back }
 
   def statuses(headers = {})
     25.times.map do

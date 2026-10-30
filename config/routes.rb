@@ -28,7 +28,7 @@ Rails.application.routes.draw do
   post 'tokens/read_only', to: 'tokens#create_read_only'
   delete 'tokens/:id', to: 'tokens#destroy'
 
-  get 'public/node/:slug', to: 'public#show'
+  get 'public/node/:slug', to: 'public#show', constraints: { slug: /[^\/]+/ }, format: false
   get 'public/index', to: 'public#index'
   get 'public/site_index', to: 'public#site_index'
   get 'public/root', to: 'public#root'
