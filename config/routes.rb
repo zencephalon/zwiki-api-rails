@@ -12,6 +12,7 @@ Rails.application.routes.draw do
 
   post 'agent', to: 'agent#create'
   post 'capture', to: 'captures#create'
+  post 'journal/today', to: 'journals#append'
 
   # User routes - scoped to current user only (no index or show by id)
   post 'users', to: 'users#create'
@@ -26,6 +27,7 @@ Rails.application.routes.draw do
   # Token management
   get 'tokens', to: 'tokens#index'
   post 'tokens/read_only', to: 'tokens#create_read_only'
+  post 'tokens/append_only', to: 'tokens#create_append_only'
   delete 'tokens/:id', to: 'tokens#destroy'
 
   get 'public/node/:slug', to: 'public#show', constraints: { slug: /[^\/]+/ }, format: false

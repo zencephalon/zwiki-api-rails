@@ -4,6 +4,7 @@ class ApplicationController < ActionController::API
   include ActionController::HttpAuthentication::Token::ControllerMethods
 
   before_action :authenticate
+  before_action :reject_append_only
 
   protected
 
@@ -31,6 +32,13 @@ class ApplicationController < ActionController::API
     @current_user = User.find_by(api_key: token)
     @current_token_type = 'full_access' if @current_user  # Legacy tokens have full access
     return @current_user
+  end
+
+  # Deny by default: only controllers that opt out accept these tokens.
+  def reject_append_only
+    return unless @current_token_type == 'append_only'
+
+    render json: { error: 'This token can only append to the journal' }, status: :forbidden
   end
 
   def require_full_access

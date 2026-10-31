@@ -114,9 +114,10 @@ class NodesController < ApplicationController
       render status: :forbidden
     end
     text = params.permit(:text)[:text]
+    before = @node.content
     @node.append(text)
     if @node.save
-      render json: @node
+      render json: NodeSerializer.new(@node).attributes.merge(appended: @node.content != before)
     else
       render json: @node.errors, status: :unprocessable_entity
     end
@@ -174,6 +175,7 @@ class NodesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_node
       @node = @current_user.nodes.find_by(short_id: params[:id])
+      render json: { error: 'Node not found' }, status: :not_found unless @node
     end
 
     # Only allow a trusted parameter "white list" through.

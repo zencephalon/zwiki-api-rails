@@ -13,6 +13,12 @@ class TokensController < ApplicationController
     render json: token_response(token), status: :created
   end
 
+  # POST /tokens/append_only
+  def create_append_only
+    token = @current_user.create_append_only_token
+    render json: token_response(token), status: :created
+  end
+
   # DELETE /tokens/:id
   def destroy
     token = @current_user.api_tokens.find_by(id: params[:id])

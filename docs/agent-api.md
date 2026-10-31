@@ -40,12 +40,13 @@ POST /login
 Note it authenticates on **`name`, not email**. The returned token is `full_access`
 and expires in 6 months.
 
-There are two token types, and the distinction matters for this endpoint:
+There are three token types, and the distinction matters for this endpoint:
 
 | Type | Obtained via | Agent can |
 |---|---|---|
 | `full_access` | `POST /login` | read **and write** nodes |
 | `read_only` | `POST /tokens/read_only` | read only |
+| `append_only` | `POST /tokens/append_only` | nothing: 403. Only `POST /journal/today` accepts it. |
 
 ## Request
 
@@ -150,10 +151,12 @@ All use the same `Authorization` header.
 | `GET /nodes/:short_id` | One node (full form). |
 | `POST /nodes` | Create. Body: `{ content }` or `{ name }`. |
 | `PATCH /nodes/:short_id` | Update. Requires `version` **greater than** the server's, else 422 with `{ server_version, client_version }`. |
-| `POST /nodes/:short_id/append` | Append `{ text }` to a node. |
+| `POST /nodes/:short_id/append` | Append `{ text }` to a node. Returns the node plus `appended`, which is `false` when the node already contained the text. |
+| `POST /journal/today` | Append `{ text }` to today's journal as a timestamped `🤖` line, creating the entry if needed. Returns `{ id, name, version }`. Accepts `append_only` and `full_access`. Not deduplicated. |
 | `DELETE /nodes/:short_id` | Delete. |
 | `GET /tokens` | List the user's tokens. |
 | `POST /tokens/read_only` | Mint a read-only token. |
+| `POST /tokens/append_only` | Mint an append-only token. Needs `full_access`. |
 
 Node shapes:
 
@@ -185,9 +188,8 @@ Node shapes:
    frontend origin (including a Vercel preview URL) **will be blocked** until it is
    added there and the server redeployed.
 
-5. **Rate limit: 20 requests per 5 seconds per IP**, across all endpoints. Fine for
-   normal use; easy to trip with an aggressive polling loop or a burst of parallel
-   node fetches. Honor `Retry-After` on 429.
+5. **Rate limit: 20 requests per 5 seconds per IP**, for requests without a valid
+   token. Authenticated callers skip it. Honor `Retry-After` on 429.
 
 6. **Content is markdown with two custom inline forms** — `[Text](short_id)` links
    and `{Text}(short_id)` embeds. A stock markdown renderer will render a link to a

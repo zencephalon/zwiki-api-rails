@@ -85,7 +85,8 @@ Details in `docs/vault-sync.md`.
 - `POST /agent` - Natural-language query over the user's nodes; server-side Claude tool loop, synchronous, may write (see `docs/agent-api.md`)
 - `GET /public/node/:slug`, `GET /public/index`, `GET /public/site_index`, `GET /public/root` - Public access, consumed by zencephalon.com
 - `POST /login` (`name` + `password`, not email) → `full_access` token, 6-month expiry
-- `GET /tokens`, `POST /tokens/read_only`, `DELETE /tokens/:id` - Token management; `read_only` tokens cannot write nodes or use agent write tools
+- `POST /journal/today` - Append `text` to today's journal as a 🤖 line; accepts `append_only` and `full_access` tokens
+- `GET /tokens`, `POST /tokens/read_only`, `POST /tokens/append_only`, `DELETE /tokens/:id` - Token management; `read_only` tokens cannot write nodes or use agent write tools; `append_only` tokens get 403 everywhere except `/journal/today`
 - `GET|PATCH|DELETE /users/me` - Current user only
 - Authentication via `Authorization` header containing the **raw token, no `Bearer` prefix**
 

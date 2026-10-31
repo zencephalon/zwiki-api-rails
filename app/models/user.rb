@@ -71,6 +71,10 @@ ctrl-d will enter a timestamp for right now
     api_tokens.create!(token_type: 'read_only', expires_at: nil)
   end
 
+  def create_append_only_token
+    api_tokens.create!(token_type: 'append_only', expires_at: nil)
+  end
+
   def create_full_access_token
     api_tokens.create!(token_type: 'full_access', expires_at: ApiToken::FULL_ACCESS_EXPIRY.from_now)
   end
