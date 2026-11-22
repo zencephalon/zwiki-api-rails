@@ -9,6 +9,7 @@ class ApiToken < ApplicationRecord
 
   scope :read_only, -> { where(token_type: 'read_only') }
   scope :full_access, -> { where(token_type: 'full_access') }
+  scope :append_only, -> { where(token_type: 'append_only') }
   scope :active, -> { where('expires_at IS NULL OR expires_at > ?', Time.current) }
 
   before_validation :generate_token, on: :create
@@ -23,6 +24,10 @@ class ApiToken < ApplicationRecord
 
   def full_access?
     token_type == 'full_access'
+  end
+
+  def append_only?
+    token_type == 'append_only'
   end
 
   def touch_last_used

@@ -40,4 +40,44 @@ RSpec.describe Node, type: :model do
       expect(node.short_id).to be_present
     end
   end
+
+  describe '#extract_name' do
+    it 'reads only the first line so body headings do not hijack untitled nodes' do
+      node = user.nodes.create!(content: "plain intro\n\n## Later Heading\nbody")
+      expect(node.name).not_to eq('Later Heading')
+
+      titled = user.nodes.create!(content: "# First Line\r\n\r\n## Second")
+      expect(titled.name).to eq('First Line')
+    end
+  end
+
+  describe '#to_export' do
+    it 'strips private inclusions and other users inclusions instead of leaking them' do
+      secret = user.nodes.create!(content: "# Secret\n\nTOP SECRET", is_private: true)
+      other_user = User.create!(name: 'Other', email: 'other-export@example.com', password: 'password')
+      other_public = other_user.nodes.create!(content: "# Other\n\nOTHER USER DATA", is_private: false)
+      pub = user.nodes.create!(
+        content: "# Public\n\nBefore {s}(#{secret.short_id}) mid {o}(#{other_public.short_id}) after",
+        is_private: false
+      )
+
+      exported = pub.to_export
+      expect(exported).not_to include('TOP SECRET')
+      expect(exported).not_to include('OTHER USER DATA')
+      expect(exported).to include('Before', 'after')
+    end
+
+    it 'terminates on circular inclusions without overflowing the stack' do
+      a = user.nodes.create!(content: "# A\n\nbody A", is_private: false)
+      b = user.nodes.create!(content: "# B\n\n{a}(#{a.short_id})", is_private: false)
+      a.update!(content: "# A\n\n{b}(#{b.short_id})")
+
+      expect { a.to_export }.not_to raise_error
+    end
+
+    it 'handles empty content without crashing' do
+      expect(Node.to_export("")).to eq("")
+      expect(Node.to_export(nil)).to eq("")
+    end
+  end
 end

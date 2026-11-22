@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_01_08_032912) do
+ActiveRecord::Schema.define(version: 2026_11_22_113000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -23,6 +23,7 @@ ActiveRecord::Schema.define(version: 2026_01_08_032912) do
     t.datetime "last_used_at"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.string "label"
     t.index ["token"], name: "index_api_tokens_on_token", unique: true
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
@@ -40,6 +41,7 @@ ActiveRecord::Schema.define(version: 2026_01_08_032912) do
     t.string "slug"
     t.index ["short_id"], name: "index_nodes_on_short_id"
     t.index ["slug"], name: "index_nodes_on_slug"
+    t.index ["user_id", "name"], name: "index_nodes_on_user_id_and_name"
     t.index ["user_id"], name: "index_nodes_on_user_id"
   end
 
@@ -99,6 +101,8 @@ ActiveRecord::Schema.define(version: 2026_01_08_032912) do
     t.string "password_digest"
     t.string "root_id"
     t.string "public_root_id"
+    t.index ["api_key"], name: "index_users_on_api_key"
+    t.index ["name"], name: "index_users_on_name"
   end
 
   add_foreign_key "api_tokens", "users"

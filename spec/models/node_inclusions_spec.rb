@@ -118,26 +118,25 @@ RSpec.describe Node, type: :model do
       allow(ENV).to receive(:[]).with('REVALIDATION_TOKEN').and_return('test-token')
     end
 
+    def collect_revalidated_paths
+      paths = []
+      allow(RestClient::Request).to receive(:execute) do |args|
+        payload = JSON.parse(args[:payload])
+        paths.concat(Array(payload['paths']))
+        double(code: 200)
+      end
+      paths
+    end
+
     it 'revalidates cache for nodes that include the saved node' do
       included_node = user.nodes.create!(content: "# Included\n\nContent", is_private: false)
       including_node = user.nodes.create!(content: "# Including\n\n{ref}(#{included_node.short_id})", is_private: false)
 
-      # Capture all revalidation calls
-      revalidated_slugs = []
-      allow(RestClient::Request).to receive(:execute) do |args|
-        payload = JSON.parse(args[:payload])
-        revalidated_slugs << payload['slug']
-        double(code: 200)
-      end
-
-      # Trigger revalidation by updating included_node
+      revalidated_paths = collect_revalidated_paths
       included_node.update!(content: "# Included\n\nUpdated content")
-
-      # Wait for async threads
       sleep(0.2)
 
-      expect(revalidated_slugs).to include(included_node.slug)
-      expect(revalidated_slugs).to include(including_node.slug)
+      expect(revalidated_paths).to include("/#{included_node.slug}", "/#{including_node.slug}", "/sitemap.xml")
     end
 
     it 'revalidates cache for recursively affected nodes' do
@@ -145,40 +144,41 @@ RSpec.describe Node, type: :model do
       node_b = user.nodes.create!(content: "# Node B\n\n{ref}(#{node_a.short_id})", is_private: false)
       node_c = user.nodes.create!(content: "# Node C\n\n{ref}(#{node_b.short_id})", is_private: false)
 
-      revalidated_slugs = []
-      allow(RestClient::Request).to receive(:execute) do |args|
-        payload = JSON.parse(args[:payload])
-        revalidated_slugs << payload['slug']
-        double(code: 200)
-      end
-
+      revalidated_paths = collect_revalidated_paths
       node_a.update!(content: "# Node A\n\nUpdated")
-
       sleep(0.2)
 
-      expect(revalidated_slugs).to include(node_a.slug)
-      expect(revalidated_slugs).to include(node_b.slug)
-      expect(revalidated_slugs).to include(node_c.slug)
+      expect(revalidated_paths).to include("/#{node_a.slug}", "/#{node_b.slug}", "/#{node_c.slug}")
     end
 
-    it 'skips private nodes when revalidating' do
+    it 'skips private nodes and private-only edits when revalidating' do
       included_node = user.nodes.create!(content: "# Included\n\nContent", is_private: false)
-      private_includer = user.nodes.create!(content: "# Private\n\n{ref}(#{included_node.short_id})", is_private: true)
+      private_includer = user.nodes.create!(content: "# Private\n\n{ref}(#{included_node.short_id})", is_private: false)
+      private_includer.update!(is_private: true)
+      sleep(0.1)
 
-      revalidated_slugs = []
-      allow(RestClient::Request).to receive(:execute) do |args|
-        payload = JSON.parse(args[:payload])
-        revalidated_slugs << payload['slug']
-        double(code: 200)
-      end
-
+      revalidated_paths = collect_revalidated_paths
       included_node.update!(content: "# Included\n\nUpdated")
-
       sleep(0.2)
 
-      expect(revalidated_slugs).to include(included_node.slug)
-      # Private nodes have no slug, so they shouldn't be in the list
-      expect(revalidated_slugs.compact).not_to include(nil)
+      expect(revalidated_paths).to include("/#{included_node.slug}")
+      expect(revalidated_paths).not_to include("/#{private_includer.slug}")
+
+      revalidated_paths.clear
+      private_includer.update!(content: "# Private\n\nStill private")
+      sleep(0.2)
+      expect(revalidated_paths).to be_empty
+    end
+
+    it 'revalidates both old and new slugs on title rename' do
+      node = user.nodes.create!(content: "# Old Title\n\nBody", is_private: false)
+      old_slug = node.slug
+
+      revalidated_paths = collect_revalidated_paths
+      node.update!(content: "# New Title\n\nBody")
+      sleep(0.2)
+
+      expect(revalidated_paths).to include("/#{old_slug}", "/#{node.slug}")
     end
   end
 end

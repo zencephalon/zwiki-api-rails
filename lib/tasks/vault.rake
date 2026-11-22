@@ -112,11 +112,22 @@ module VaultSync
       renames << [path, File.join(dir, "#{desired}.md")]
     end
 
-    # Two-phase via temp names so swaps/collisions between renamed files are safe.
-    staged = renames.map { |src, dst| [src, dst, "#{src}.zwikitmp#{rand(1_000_000)}"] }
+    # Two-phase via temp names so swaps/collisions between renamed files are safe,
+    # without clobbering unrelated local files that sit at a target name.
+    sources = renames.map(&:first).to_set
+    safe_renames = renames.reject do |src, dst|
+      if File.exist?(dst) && !sources.include?(dst)
+        warn "Skipping rename #{File.basename(src)} -> #{File.basename(dst)}: target already exists"
+        true
+      else
+        false
+      end
+    end
+
+    staged = safe_renames.map { |src, dst| [src, dst, "#{src}.zwikitmp#{rand(1_000_000)}"] }
     staged.each { |src, _dst, tmp| File.rename(src, tmp) }
     staged.each { |_src, dst, tmp| File.rename(tmp, dst) }
-    renames.size
+    safe_renames.size
   end
 end
 
@@ -177,21 +188,24 @@ namespace :vault do
     importer = VaultImporter.new(user, dir)
     result = importer.import(mode: :sync, only_files: only_files)
 
-    state['last_sync_at'] = started.iso8601
-    VaultSync.save_state(dir, state)
+    failed = result[:failed] || []
+    conflicts = result[:conflicts] || []
+
+    if failed.empty? && conflicts.empty?
+      state['last_sync_at'] = started.iso8601
+      VaultSync.save_state(dir, state)
+    end
 
     puts "Sync complete:"
     puts "  Created: #{result[:created]}"
     puts "  Updated: #{result[:updated]}"
     puts "  Skipped: #{result[:skipped]}"
 
-    failed = result[:failed] || []
     if failed.any?
       puts "  Failed:  #{failed.length}"
       failed.each { |f| puts "    - #{f[:file]}: #{f[:error]}" }
     end
 
-    conflicts = result[:conflicts] || []
     if conflicts.any?
       puts
       puts "!! #{conflicts.length} file(s) NOT pushed - the server is newer:"

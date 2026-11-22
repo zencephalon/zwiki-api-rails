@@ -21,7 +21,7 @@ class Node < ApplicationRecord
 
   before_save :extract_name, :extract_journal_date, :set_slug, :tag_links, :tag_inclusions
   after_create :set_short_id
-  after_save :revalidate_cache
+  after_commit :revalidate_cache, on: [:create, :update]
 
   belongs_to :user
 
@@ -124,11 +124,10 @@ class Node < ApplicationRecord
   end
 
   def extract_name
-    begin
-      self.name = self.content.split('\n')[0].match(/#+\s*(.*)$/)[1]
-    rescue
-      self.name = Time.now.to_s
-    end
+    first_line = self.content.to_s.lines.first&.chomp
+    match = first_line&.match(/\A#+\s*(.+)\z/)
+    extracted = match && match[1].strip
+    self.name = extracted.present? ? extracted : Time.now.to_s
   end
 
   def set_slug
@@ -180,24 +179,25 @@ class Node < ApplicationRecord
       slug: self.slug,
       created_at: self.created_at,
       updated_at: self.updated_at,
-      backlinks: Node.tagged_with(self.short_id).where(is_private: false).pluck(:slug, :name)
+      backlinks: user.nodes.tagged_with(self.short_id, on: :links).where(is_private: false).pluck(:slug, :name)
     }
   end
 
   def to_export
-    Node.to_export(self.content)
+    Node.to_export(self.content, user_id: self.user_id, visited: Set.new([self.id]))
   end
 
-  def self.to_export(input)
+  def self.to_export(input, user_id: nil, visited: Set.new)
     # split over the privacy fold first
-    input = input.split(PRIVACY_FOLD_REGEX).first
+    input = input.to_s.split(PRIVACY_FOLD_REGEX).first.to_s
     content = input
+    scope = user_id ? Node.where(user_id: user_id) : Node.all
 
     input.scan(LINK_REGEX).each do |text, short_id|
       next if short_id.starts_with?('http')
 
       matched_url = short_id.chomp('!')
-      linked_node = Node.find_by(short_id: matched_url)
+      linked_node = scope.find_by(short_id: matched_url)
 
       if !linked_node || linked_node.is_private
         content = content.gsub("[#{text}](#{short_id})", text)
@@ -209,14 +209,20 @@ class Node < ApplicationRecord
     input = content
 
     input.scan(INCLUDE_REGEX).each do |text, short_id|
-      node = Node.find_by(short_id: short_id)
-      if node
-        content = content.gsub("{#{text}}(#{short_id})", Node.to_export(node.content_without_title))
+      node = scope.find_by(short_id: short_id)
+      if !node || node.is_private || visited.include?(node.id)
+        content = content.gsub("{#{text}}(#{short_id})", "")
+      else
+        expanded = Node.to_export(
+          node.content_without_title,
+          user_id: user_id || node.user_id,
+          visited: visited + [node.id]
+        )
+        content = content.gsub("{#{text}}(#{short_id})", expanded)
       end
     end
 
-    content.gsub!("☐", "* ☐")
-    content.gsub!("☑", "* ☑")
+    content = content.gsub("☐", "* ☐").gsub("☑", "* ☑")
 
     content
   end
@@ -247,7 +253,7 @@ class Node < ApplicationRecord
       # Only look for includers if we haven't reached max depth
       next if depth >= max_depth
 
-      includers = Node.tagged_with(current_node.short_id, on: :inclusions)
+      includers = user.nodes.tagged_with(current_node.short_id, on: :inclusions)
       includers.each do |includer|
         unless visited.include?(includer.id)
           affected.add(includer)
@@ -263,50 +269,56 @@ class Node < ApplicationRecord
 
   def revalidate_cache
     return if ENV['REVALIDATION_TOKEN'].blank?
+    return if self.is_private && !saved_change_to_is_private?
 
     if is_glossary?
       # Glossary terms link from anywhere, so an edit changes every page.
-      payloads = [{ all: true }]
+      payload = { all: true }
       description = "every page (glossary edit)"
     else
-      slugs_to_revalidate = []
-      slugs_to_revalidate << self.slug if self.slug.present?
-
-      collect_affected_nodes.each do |node|
-        slugs_to_revalidate << node.slug if node.slug.present?
+      slugs_to_revalidate = Set.new
+      slugs_to_revalidate.add(self.slug) if self.slug.present?
+      if saved_change_to_slug? && slug_before_last_save.present?
+        slugs_to_revalidate.add(slug_before_last_save)
       end
 
-      payloads = slugs_to_revalidate.map { |slug| { slug: slug } }
-      description = "#{slugs_to_revalidate.length} nodes: #{slugs_to_revalidate.join(', ')}"
-    end
+      collect_affected_nodes.each do |node|
+        slugs_to_revalidate.add(node.slug) if !node.is_private && node.slug.present?
+      end
 
-    return if payloads.empty?
+      return if slugs_to_revalidate.empty?
+
+      paths = slugs_to_revalidate.map { |slug| "/#{slug}" } + [
+        "/",
+        "/z/archive/updated",
+        "/z/archive/created",
+        "/z/archive/name",
+        "/sitemap.xml"
+      ]
+      payload = { paths: paths }
+      description = "#{slugs_to_revalidate.length} nodes: #{slugs_to_revalidate.to_a.join(', ')}"
+    end
 
     Rails.logger.info "Revalidating cache for #{description}"
 
     Thread.new do
-      threads = payloads.map do |payload|
-        Thread.new do
-          begin
-            RestClient::Request.execute(
-              method: :post,
-              url: "https://www.zencephalon.com/api/revalidate",
-              payload: payload.to_json,
-              headers: {
-                content_type: :json,
-                accept: :json,
-                authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
-              },
-              max_redirects: 3,
-              timeout: 10
-            )
-            Rails.logger.info "Cache revalidation succeeded for #{payload}"
-          rescue => e
-            Rails.logger.warn "Cache revalidation failed for #{payload}: #{e.message}"
-          end
-        end
+      begin
+        RestClient::Request.execute(
+          method: :post,
+          url: "https://www.zencephalon.com/api/revalidate",
+          payload: payload.to_json,
+          headers: {
+            content_type: :json,
+            accept: :json,
+            authorization: "Bearer #{ENV['REVALIDATION_TOKEN']}"
+          },
+          max_redirects: 3,
+          timeout: 10
+        )
+        Rails.logger.info "Cache revalidation succeeded for #{payload}"
+      rescue => e
+        Rails.logger.warn "Cache revalidation failed for #{payload}: #{e.message}"
       end
-      threads.each(&:join)
     end
   end
 end

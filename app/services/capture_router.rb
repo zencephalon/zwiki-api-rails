@@ -62,9 +62,12 @@ class CaptureRouter
     if (match = text.match(TASK_PREFIX))
       day = match.post_match.match(TODAY_PREFIX)
       title = (day ? day.post_match : match.post_match).strip
+      return Result.new(journal: nil, tasks: []) if title.empty?
+
       Result.new(journal: nil, tasks: [{ title: title, notes: nil, today: !day.nil? }])
     elsif (match = text.match(JOURNAL_PREFIX))
-      Result.new(journal: match.post_match.strip, tasks: [])
+      journal = match.post_match.strip
+      Result.new(journal: journal.presence, tasks: [])
     else
       classify(text)
     end

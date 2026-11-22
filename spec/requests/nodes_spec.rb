@@ -24,4 +24,32 @@ RSpec.describe "Nodes", type: :request do
       expect(JSON.parse(response.body)).to include('appended' => false, 'content' => "# Note\n\nHello world")
     end
   end
+
+  describe "omitting q on index and search" do
+    it "returns 200 instead of crashing on nil q" do
+      get "/nodes", headers: auth
+      expect(response).to have_http_status(:ok)
+
+      get "/nodes/search", headers: auth
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq([])
+    end
+  end
+
+  describe "GET /tokens and POST /tokens/append_only" do
+    it "returns the full secret only on creation and masks it on index" do
+      post "/tokens/append_only", params: { label: "hermes" }, headers: auth
+      expect(response).to have_http_status(:created)
+      created = JSON.parse(response.body)
+      expect(created['token']).to be_present
+      expect(created['label']).to eq('hermes')
+
+      get "/tokens", headers: auth
+      expect(response).to have_http_status(:ok)
+      listed = JSON.parse(response.body)
+      expect(listed).not_to be_empty
+      expect(listed.all? { |t| !t.key?('token') && t['token_prefix'].present? }).to be(true)
+      expect(listed.map { |t| t['label'] }).to include('hermes')
+    end
+  end
 end

@@ -10,14 +10,24 @@ class TreedoInbox
 
   # `today` also sets the task's *when* to today, so it shows on Today and comes up as a card.
   def add(title, notes = nil, today: false)
-    response = Net::HTTP.post(
-      URL,
-      { title: title, notes: notes, today: today }.to_json,
-      'Content-Type' => 'application/json',
-      'Authorization' => "Bearer #{ENV.fetch('TREEDO_TOKEN')}"
-    )
+    request = Net::HTTP::Post.new(URL)
+    request['Content-Type'] = 'application/json'
+    request['Authorization'] = "Bearer #{ENV.fetch('TREEDO_TOKEN')}"
+    request.body = { title: title, notes: notes, today: today }.to_json
+
+    response = Net::HTTP.start(
+      URL.host,
+      URL.port,
+      use_ssl: URL.scheme == 'https',
+      open_timeout: 5,
+      read_timeout: 15
+    ) { |http| http.request(request) }
     raise Error, "treedo inbox #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
+    return {} if response.body.to_s.strip.empty?
+
     JSON.parse(response.body)
+  rescue JSON::ParserError
+    {}
   end
 end

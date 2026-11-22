@@ -117,6 +117,7 @@ RSpec.describe ZwikiAgent do
       expect(tool_result[:content]).to include("Duck Facts", "waterproof")
       expect(tool_result[:is_error]).to be_nil
       expect(result[:tool_calls]).to eq([{ name: "search_nodes", input: { "query" => "ducks" } }])
+      expect(result[:usage]).to eq(input_tokens: 20, output_tokens: 40)
     end
 
     it 'reports no matches without erroring' do

@@ -9,11 +9,24 @@ class Rack::Attack
 #    '127.0.0.1' == req.ip || '::1' == req.ip
 #  end
 
+  AI_PATH = %r{\A(?:/agent|/nodes/full_search_with_summary|/nodes/[^/]+/magic_append)\z}.freeze
+
   # zencephalon's build renders ~17 pages/s from one IP. A throttled fetch there
-  # used to get cached as a permanent 404, so authenticated callers skip the limit.
+  # used to get cached as a permanent 404, so authenticated callers skip the general
+  # limit, while login and Anthropic-backed routes stay throttled.
   safelist('authenticated') do |req|
+    next false if req.path == '/login' || AI_PATH.match?(req.path)
+
     token = req.get_header('HTTP_AUTHORIZATION')
     token.present? && (ApiToken.active.exists?(token: token) || User.exists?(api_key: token))
+  end
+
+  throttle('login/ip', limit: 10, period: 60) do |req|
+    req.ip if req.post? && req.path == '/login'
+  end
+
+  throttle('ai/ip', limit: 20, period: 60) do |req|
+    req.ip if AI_PATH.match?(req.path)
   end
 
   # Allow an IP address to make 20 requests every 5 seconds

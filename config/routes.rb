@@ -14,15 +14,13 @@ Rails.application.routes.draw do
   post 'capture', to: 'captures#create'
   post 'journal/today', to: 'journals#append'
 
-  # User routes - scoped to current user only (no index or show by id)
-  post 'users', to: 'users#create'
+  # User routes - scoped to current user only (no index, show by id, or open signup)
   get 'users/me', to: 'users#me'
   patch 'users/me', to: 'users#update'
   put 'users/me', to: 'users#update'
   delete 'users/me', to: 'users#destroy'
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   post 'login', to: 'sessions#login'
-  post 'register', to: 'sessions#register'
 
   # Token management
   get 'tokens', to: 'tokens#index'

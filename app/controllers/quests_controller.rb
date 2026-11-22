@@ -20,14 +20,16 @@ class QuestsController < ApplicationController
 
   # PATCH/PUT /quests/1
   def update
-    if @quest.version >= params[:version].to_i
-      render json: { server_version: @quest.version, client_version: params[:version] }, status: :unprocessable_entity
-      return
-    end
-    if @quest.update(blob: params[:blob], version: params[:version].to_i)
-      render json: @quest
-    else
-      render json: @quest.errors, status: :unprocessable_entity
+    @quest.with_lock do
+      if @quest.version >= params[:version].to_i
+        render json: { server_version: @quest.version, client_version: params[:version] }, status: :unprocessable_entity
+        return
+      end
+      if @quest.update(blob: params[:blob], version: params[:version].to_i)
+        render json: @quest
+      else
+        render json: @quest.errors, status: :unprocessable_entity
+      end
     end
   end
 

@@ -5,24 +5,24 @@ class NodesController < ApplicationController
   # GET /nodes
   def index
     q = search_params[:q]
-    render json: q.empty? ? @current_user.nodes.all : @current_user.nodes.search_for(q), each_serializer: NodeShortSerializer
+    render json: q.blank? ? @current_user.nodes.all : @current_user.nodes.search_for(q), each_serializer: NodeShortSerializer
   end
 
   def search
     q = search_params[:q]
-    render json: q.empty? ? [] : @current_user.nodes.search_for(q).limit(1), each_serializer: NodeSerializer
+    render json: q.blank? ? [] : @current_user.nodes.search_for(q).limit(1), each_serializer: NodeSerializer
   end
 
   def full_search_with_summary
     q = search_params[:q]
-    
-    if q.empty?
+
+    if q.blank?
       render json: { summary: "", nodes: [] }
       return
     end
 
     nodes = @current_user.nodes.search_for(q).limit(15)
-    
+
     if nodes.empty?
       render json: { summary: "", nodes: [] }
       return
@@ -32,13 +32,13 @@ class NodesController < ApplicationController
     content_to_summarize = nodes.map do |node|
       "# #{node.name}\n#{node.content}"
     end.join("\n\n---\n\n")
-    
+
     client = ZwikiAgent.build_client
 
     system_prompt = "You are a knowledge summarizer. Given multiple documents or notes, create a comprehensive yet concise summary that captures the key information, relationships, and insights across all the provided content. Focus on factual information and clear connections between ideas. Return the summary without an introduction."
 
     response = client.messages.create(
-      model: "claude-opus-5",
+      model: ZwikiAgent::MODEL,
       system_: system_prompt,
       messages: [
         { role: "user", content: "Please summarize the following content:\n\n#{content_to_summarize}" }
@@ -52,6 +52,11 @@ class NodesController < ApplicationController
       summary: summary,
       nodes: nodes.map { |node| NodeShortSerializer.new(node) }
     }
+  rescue ZwikiAgent::Error => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue Anthropic::Errors::APIStatusError => e
+    Rails.logger.error("Summary upstream error #{e.status} #{e.message}")
+    render json: { error: "Upstream model error" }, status: :bad_gateway
   end
 
   # GET /nodes/1
@@ -65,11 +70,12 @@ class NodesController < ApplicationController
 
   # POST /nodes
   def create
-    node = @current_user.nodes.find_by(name: node_params[:name])
-
-    if node
-      render json: node, location: node
-      return
+    if node_params[:name].present?
+      node = @current_user.nodes.find_by(name: node_params[:name])
+      if node
+        render json: node, location: node
+        return
+      end
     end
 
     @node = @current_user.nodes.new(node_params)
@@ -88,38 +94,37 @@ class NodesController < ApplicationController
       render status: :forbidden
       return
     end
-    if @node.version >= node_params[:version].to_i
-      render json: { server_version: @node.version, client_version: node_params[:version] }, status: :unprocessable_entity
-      return
-    end
 
-    # Assign attributes without saving to check for changes
-    @node.assign_attributes(node_params)
+    @node.with_lock do
+      if @node.version >= node_params[:version].to_i
+        render json: { server_version: @node.version, client_version: node_params[:version] }, status: :unprocessable_entity
+        return
+      end
 
-    # Only save if there are actual changes
-    unless @node.changed?
-      render json: @node
-      return
-    end
+      @node.assign_attributes(node_params)
 
-    if @node.save
-      render json: @node
-    else
-      render json: @node.errors, status: :unprocessable_entity
+      if @node.save
+        render json: @node
+      else
+        render json: @node.errors, status: :unprocessable_entity
+      end
     end
   end
 
   def append
     if @current_user.id != @node.user_id
       render status: :forbidden
+      return
     end
     text = params.permit(:text)[:text]
-    before = @node.content
-    @node.append(text)
-    if @node.save
-      render json: NodeSerializer.new(@node).attributes.merge(appended: @node.content != before)
-    else
-      render json: @node.errors, status: :unprocessable_entity
+    @node.with_lock do
+      before = @node.content
+      @node.append(text)
+      if @node.save
+        render json: NodeSerializer.new(@node).attributes.merge(appended: @node.content != before)
+      else
+        render json: @node.errors, status: :unprocessable_entity
+      end
     end
   end
 
@@ -130,15 +135,17 @@ class NodesController < ApplicationController
     end
 
     text = magic_append_params[:text]
-    
+    base_version = @node.version
+    original_content = @node.content
+
     client = ZwikiAgent.build_client
 
     system_prompt = "You assist the user's personal knowledge management system. You'll be given a new journal entry and an existing knowledge entry. Update it to reflect the new information. Always include events that occurred. Filter extraneous information. Don't elaborate or extrapolate. Keep the pre-existing content intact unless it needs modification to reflect the new information. Return only the updated Markdown."
-    
-    message = "#{text}\n\n============================\n\n#{@node.content}"
-    
+
+    message = "#{text}\n\n============================\n\n#{original_content}"
+
     response = client.messages.create(
-      model: "claude-opus-5",
+      model: ZwikiAgent::MODEL,
       system_: system_prompt,
       messages: [
         { role: "user", content: message }
@@ -150,22 +157,35 @@ class NodesController < ApplicationController
     ai_response = nil if ai_response.empty?
 
     if ai_response
-      @node.content = ai_response
-      @node.version = @node.version + 1
-      if @node.save
-        render json: @node
-      else
-        render json: @node.errors, status: :unprocessable_entity
+      @node.with_lock do
+        if @node.version != base_version
+          render json: { error: "Node changed while merging", server_version: @node.version }, status: :unprocessable_entity
+          return
+        end
+
+        @node.content = ai_response
+        @node.version = @node.version + 1
+        if @node.save
+          render json: @node
+        else
+          render json: @node.errors, status: :unprocessable_entity
+        end
       end
     else
       render json: { error: "Failed to get AI response" }, status: :unprocessable_entity
     end
+  rescue ZwikiAgent::Error => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue Anthropic::Errors::APIStatusError => e
+    Rails.logger.error("Magic append upstream error #{e.status} #{e.message}")
+    render json: { error: "Upstream model error" }, status: :bad_gateway
   end
 
   # DELETE /nodes/1
   def destroy
     if @current_user.id != @node.user_id
       render status: :forbidden
+      return
     end
 
     @node.destroy
@@ -180,7 +200,7 @@ class NodesController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def node_params
-      params.permit(:name, :content, :title, :version, :node, :is_private)
+      params.permit(:name, :content, :version, :is_private)
     end
 
     def search_params

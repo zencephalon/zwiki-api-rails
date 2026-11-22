@@ -1,10 +1,9 @@
-require 'redcarpet'
-
 class User < ApplicationRecord
   has_secure_password
 
-  has_many :nodes
-  has_many :questlogs
+  has_many :nodes, dependent: :destroy
+  has_many :questlogs, dependent: :destroy
+  has_one :quest, dependent: :destroy
   has_many :api_tokens, dependent: :destroy
 
   # Assign an API key on create
@@ -67,16 +66,16 @@ ctrl-d will enter a timestamp for right now
     end
   end
 
-  def create_read_only_token
-    api_tokens.create!(token_type: 'read_only', expires_at: nil)
+  def create_read_only_token(label: nil)
+    api_tokens.create!(token_type: 'read_only', expires_at: nil, label: label)
   end
 
-  def create_append_only_token
-    api_tokens.create!(token_type: 'append_only', expires_at: nil)
+  def create_append_only_token(label: nil)
+    api_tokens.create!(token_type: 'append_only', expires_at: nil, label: label)
   end
 
-  def create_full_access_token
-    api_tokens.create!(token_type: 'full_access', expires_at: ApiToken::FULL_ACCESS_EXPIRY.from_now)
+  def create_full_access_token(label: nil)
+    api_tokens.create!(token_type: 'full_access', expires_at: ApiToken::FULL_ACCESS_EXPIRY.from_now, label: label)
   end
 
   def make_nodes_public
@@ -84,7 +83,7 @@ ctrl-d will enter a timestamp for right now
     queue = [self.public_root_id]
 
     until queue.empty? do
-      current = Node.find_by(short_id: queue.pop)
+      current = self.nodes.find_by(short_id: queue.pop)
       next unless current
       next if seen_nodes[current.id]
 
@@ -102,7 +101,7 @@ ctrl-d will enter a timestamp for right now
     queue = [self.public_root_id]
 
     until queue.empty? do
-      current = Node.find_by(short_id: queue.pop)
+      current = self.nodes.find_by(short_id: queue.pop)
       next unless current
       next if seen_nodes[current.id]
 

@@ -29,6 +29,11 @@ RSpec.describe CaptureRouter do
     end
   end
 
+  it "ignores a bare task prefix with no title" do
+    expect(described_class.new(client: double).route("Task").tasks).to be_empty
+    expect(described_class.new(client: double).route("Task today").tasks).to be_empty
+  end
+
   it "routes a spoken journal prefix straight to the journal" do
     result = described_class.new(client: double).route("Journal, walked the dog at dusk.")
 

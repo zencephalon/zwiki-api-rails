@@ -11,7 +11,10 @@ RSpec.describe "Rate limiting", type: :request do
     freeze_time
   end
 
-  after { travel_back }
+  after do
+    Rack::Attack.reset!
+    travel_back
+  end
 
   def statuses(headers = {})
     25.times.map do
@@ -40,5 +43,22 @@ RSpec.describe "Rate limiting", type: :request do
 
   it "never throttles a legacy api key" do
     expect(statuses("Authorization" => user.api_key)).to all(eq(200))
+  end
+
+  it "throttles repeated login attempts" do
+    codes = 12.times.map do
+      post "/login", params: { name: "nobody", password: "wrong" }
+      response.status
+    end
+    expect(codes).to include(429)
+  end
+
+  it "throttles AI endpoints even with an active api token" do
+    token = ApiToken.create!(user: user, token_type: "full_access")
+    codes = 22.times.map do
+      post "/agent", params: { query: "  " }, headers: { "Authorization" => token.token }
+      response.status
+    end
+    expect(codes).to include(429)
   end
 end

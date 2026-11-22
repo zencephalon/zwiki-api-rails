@@ -83,24 +83,28 @@ Details in `docs/vault-sync.md`.
 - `POST /nodes/:id/append` - Append text to existing node
 - `POST /nodes/:id/magic_append` - AI-assisted content merging
 - `POST /agent` - Natural-language query over the user's nodes; server-side Claude tool loop, synchronous, may write (see `docs/agent-api.md`)
-- `GET /public/node/:slug`, `GET /public/index`, `GET /public/site_index`, `GET /public/root` - Public access, consumed by zencephalon.com
-- `POST /login` (`name` + `password`, not email) → `full_access` token, 6-month expiry
+- `GET /public/node/:slug`, `GET /public/index`, `GET /public/site_index`, `GET /public/root` - Public-content endpoints (still require an authenticated token, consumed by zencephalon.com)
+- `POST /capture` - Repebble Index voice capture webhook (`X-Capture-Token`); routes via `CaptureRouter` + `CaptureProcessor` into `DailyJournal` and `TreedoInbox`
+- `POST /login` (`name` + `password`, not email) → `full_access` token, 6-month expiry (open registration disabled)
 - `POST /journal/today` - Append `text` to today's journal as a 🤖 line; accepts `append_only` and `full_access` tokens
-- `GET /tokens`, `POST /tokens/read_only`, `POST /tokens/append_only`, `DELETE /tokens/:id` - Token management; `read_only` tokens cannot write nodes or use agent write tools; `append_only` tokens get 403 everywhere except `/journal/today`
+- `GET /tokens`, `POST /tokens/read_only`, `POST /tokens/append_only`, `DELETE /tokens/:id` - Token management (supports optional `label`; `GET /tokens` returns masked `token_prefix`, full secret returned only on creation; `read_only` tokens cannot write nodes or use agent write tools; `append_only` tokens get 403 everywhere except `/journal/today`)
 - `GET|PATCH|DELETE /users/me` - Current user only
 - Authentication via `Authorization` header containing the **raw token, no `Bearer` prefix**
 
 ### External Integrations
 
-- **Anthropic Claude API**: Powers search summaries, magic append, and the `/agent` tool loop (`app/services/zwiki_agent.rb`)
-- **zencephalon.com**: `Node#after_save` POSTs `{slug}` to `https://www.zencephalon.com/api/revalidate` with `Bearer $REVALIDATION_TOKEN`; skipped when the env var is blank, so local edits never touch prod
+- **Anthropic Claude API**: Powers search summaries, magic append, voice-capture routing (`CaptureRouter`), and the `/agent` tool loop (`app/services/zwiki_agent.rb`)
+- **Treedo Inbox**: `TreedoInbox` posts captured tasks to `https://do.zencephalon.com/api/inbox`
+- **zencephalon.com**: `Node#after_commit` POSTs `{paths}` (or `{all: true}` for glossaries) to `https://www.zencephalon.com/api/revalidate` with `Bearer $REVALIDATION_TOKEN`; skipped when the env var is blank or on private-only edits
 - **PostgreSQL**: Primary database with full-text search
 - **pg_search**: Full-text search with highlighting and ranking
 
 ### Environment Variables
 
-- `ANTHROPIC_API_KEY`: Required for AI features (search summaries, magic append)
+- `ANTHROPIC_API_KEY`: Required for AI features (search summaries, magic append, `/agent`, `/capture`)
 - `REVALIDATION_TOKEN`: Optional; enables the zencephalon revalidation hook above
+- `CAPTURE_SECRET`, `CAPTURE_USER_ID`, `CAPTURE_TIME_ZONE`: Voice capture webhook auth and journal settings
+- `TREEDO_TOKEN`, `TREEDO_INBOX_URL`: Treedo task destination for `/capture`
 - Database credentials in `config/database.yml`
 
 ## Testing Patterns

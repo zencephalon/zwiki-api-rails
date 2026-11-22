@@ -160,15 +160,15 @@ class VaultImporter
 
     case mode
     when :sync
-      update_node(node, content, frontmatter)
+      update_node(node, content, frontmatter, force: false)
     when :force
-      update_node(node, content, frontmatter)
+      update_node(node, content, frontmatter, force: true)
     when :skip_existing
       @skipped_count += 1
     end
   end
 
-  def update_node(node, content, frontmatter)
+  def update_node(node, content, frontmatter, force: false)
     node.content = content
     node.is_private = frontmatter['is_private'] if frontmatter.key?('is_private')
 
@@ -177,7 +177,7 @@ class VaultImporter
       return
     end
 
-    if server_moved_ahead?(node, frontmatter)
+    if !force && server_moved_ahead?(node, frontmatter)
       @conflicts << {
         file: "#{node.name}.md",
         short_id: node.short_id,

@@ -139,16 +139,19 @@ RSpec.describe VaultImporter do
       expect(result[:skipped]).to eq(1)
     end
 
-    it 'updates in force mode when content has changed' do
+    it 'updates in force mode even when server version moved ahead' do
       node = user.nodes.create!(content: "# Existing\n\nOld content")
+      node.update!(version: 9)
 
       write_markdown_file('Existing', "# Existing\n\nForced content", {
-        'short_id' => node.short_id
+        'short_id' => node.short_id,
+        'version' => 3
       })
 
       importer = VaultImporter.new(user, import_dir)
       result = importer.import(mode: :force)
 
+      expect(result[:conflicts]).to be_empty
       expect(result[:updated]).to eq(1)
       node.reload
       expect(node.content).to include('Forced content')

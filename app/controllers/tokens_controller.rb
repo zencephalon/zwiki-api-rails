@@ -4,19 +4,19 @@ class TokensController < ApplicationController
   # GET /tokens
   def index
     tokens = @current_user.api_tokens.order(created_at: :desc)
-    render json: tokens.map { |t| token_response(t) }
+    render json: tokens.map { |t| token_response(t, include_secret: false) }
   end
 
   # POST /tokens/read_only
   def create_read_only
-    token = @current_user.create_read_only_token
-    render json: token_response(token), status: :created
+    token = @current_user.create_read_only_token(label: params[:label].presence)
+    render json: token_response(token, include_secret: true), status: :created
   end
 
   # POST /tokens/append_only
   def create_append_only
-    token = @current_user.create_append_only_token
-    render json: token_response(token), status: :created
+    token = @current_user.create_append_only_token(label: params[:label].presence)
+    render json: token_response(token, include_secret: true), status: :created
   end
 
   # DELETE /tokens/:id
@@ -39,14 +39,17 @@ class TokensController < ApplicationController
 
   private
 
-  def token_response(token)
-    {
+  def token_response(token, include_secret:)
+    payload = {
       id: token.id,
-      token: token.token,
+      token_prefix: token.token[0, 8],
+      label: token.label,
       token_type: token.token_type,
       expires_at: token.expires_at,
       last_used_at: token.last_used_at,
       created_at: token.created_at
     }
+    payload[:token] = token.token if include_secret
+    payload
   end
 end

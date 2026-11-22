@@ -20,7 +20,14 @@ class PublicController < ApplicationController
   end
 
   def root
-    render json: @current_user.public_root.next_json
+    node = @current_user.public_root
+
+    if !node || node.is_private
+      render json: { error: "entity is private" }, status: :unprocessable_entity
+      return
+    end
+
+    render json: node.next_json
   end
 
   private

@@ -6,8 +6,9 @@ RSpec.describe UsersController, type: :routing do
       expect(get: "/users/me").to route_to("users#me")
     end
 
-    it "routes to #create" do
-      expect(post: "/users").to route_to("users#create")
+    it "does not route to #create" do
+      expect(post: "/users").not_to be_routable
+      expect(post: "/register").not_to be_routable
     end
 
     it "routes to #update via PUT" do
