@@ -170,6 +170,17 @@ RSpec.describe Node, type: :model do
       expect(revalidated_paths).to be_empty
     end
 
+    it 'revalidates public includers when a private included node changes' do
+      private_included = user.nodes.create!(content: "# Private Snippet\n\nV1", is_private: true)
+      public_includer = user.nodes.create!(content: "# Public Page\n\n{ref}(#{private_included.short_id})", is_private: false)
+
+      revalidated_paths = collect_revalidated_paths
+      private_included.update!(content: "# Private Snippet\n\nV2")
+      sleep(0.2)
+
+      expect(revalidated_paths).to include("/#{public_includer.slug}")
+    end
+
     it 'revalidates both old and new slugs on title rename' do
       node = user.nodes.create!(content: "# Old Title\n\nBody", is_private: false)
       old_slug = node.slug

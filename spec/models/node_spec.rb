@@ -52,19 +52,19 @@ RSpec.describe Node, type: :model do
   end
 
   describe '#to_export' do
-    it 'strips private inclusions and other users inclusions instead of leaking them' do
-      secret = user.nodes.create!(content: "# Secret\n\nTOP SECRET", is_private: true)
+    it 'expands own private inclusions while respecting privacy folds and stripping other users inclusions' do
+      snippet = user.nodes.create!(content: "# Snippet\n\nIncluded text ₴ hidden ₴", is_private: true)
       other_user = User.create!(name: 'Other', email: 'other-export@example.com', password: 'password')
       other_public = other_user.nodes.create!(content: "# Other\n\nOTHER USER DATA", is_private: false)
       pub = user.nodes.create!(
-        content: "# Public\n\nBefore {s}(#{secret.short_id}) mid {o}(#{other_public.short_id}) after",
+        content: "# Public\n\nBefore {s}(#{snippet.short_id}) mid {o}(#{other_public.short_id}) after",
         is_private: false
       )
 
       exported = pub.to_export
-      expect(exported).not_to include('TOP SECRET')
+      expect(exported).to include('Before', 'Included text', 'after')
+      expect(exported).not_to include('hidden')
       expect(exported).not_to include('OTHER USER DATA')
-      expect(exported).to include('Before', 'after')
     end
 
     it 'terminates on circular inclusions without overflowing the stack' do

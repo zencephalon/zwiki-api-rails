@@ -210,7 +210,7 @@ class Node < ApplicationRecord
 
     input.scan(INCLUDE_REGEX).each do |text, short_id|
       node = scope.find_by(short_id: short_id)
-      if !node || node.is_private || visited.include?(node.id)
+      if !node || visited.include?(node.id)
         content = content.gsub("{#{text}}(#{short_id})", "")
       else
         expanded = Node.to_export(
@@ -218,7 +218,7 @@ class Node < ApplicationRecord
           user_id: user_id || node.user_id,
           visited: visited + [node.id]
         )
-        content = content.gsub("{#{text}}(#{short_id})", expanded)
+        content = content.gsub("{#{text}}(#{short_id})") { expanded }
       end
     end
 
@@ -269,17 +269,18 @@ class Node < ApplicationRecord
 
   def revalidate_cache
     return if ENV['REVALIDATION_TOKEN'].blank?
-    return if self.is_private && !saved_change_to_is_private?
 
-    if is_glossary?
+    if is_glossary? && (!self.is_private || saved_change_to_is_private?)
       # Glossary terms link from anywhere, so an edit changes every page.
       payload = { all: true }
       description = "every page (glossary edit)"
     else
       slugs_to_revalidate = Set.new
-      slugs_to_revalidate.add(self.slug) if self.slug.present?
-      if saved_change_to_slug? && slug_before_last_save.present?
-        slugs_to_revalidate.add(slug_before_last_save)
+      if !self.is_private || saved_change_to_is_private?
+        slugs_to_revalidate.add(self.slug) if self.slug.present?
+        if saved_change_to_slug? && slug_before_last_save.present?
+          slugs_to_revalidate.add(slug_before_last_save)
+        end
       end
 
       collect_affected_nodes.each do |node|
